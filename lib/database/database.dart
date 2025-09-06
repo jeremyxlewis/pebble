@@ -1,11 +1,23 @@
 import 'package:drift/drift.dart';
-import 'dart:io';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:pebble_board/models/board_with_thumbnail.dart';
+import 'package:pebble_board/database/database_native.dart' if (dart.library.html) 'package:pebble_board/database/database_web.dart';
 
 part 'database.g.dart';
+
+enum ThumbnailSource { auto, manual }
+
+class ThumbnailSourceConverter extends TypeConverter<ThumbnailSource, int> {
+  const ThumbnailSourceConverter();
+  @override
+  ThumbnailSource fromSql(int fromDb) {
+    return ThumbnailSource.values[fromDb];
+  }
+
+  @override
+  int toSql(ThumbnailSource value) {
+    return value.index;
+  }
+}
 
 enum BookmarkSortOrder {
   createdAtDesc,
@@ -14,17 +26,13 @@ enum BookmarkSortOrder {
   titleDesc,
 }
 
-enum ThumbnailSource {
-  auto,
-  manual,
-}
-
 class Boards extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   DateTimeColumn get createdAt => dateTime()();
-  IntColumn get thumbnailSource => integer().withDefault(const Constant(0))(); // 0 for auto, 1 for manual
+  IntColumn get thumbnailSource => integer().map(const ThumbnailSourceConverter()).withDefault(const Constant(0))();
   TextColumn get manualThumbnailPath => text().nullable()(); // New column for manual thumbnail path
+  IntColumn get position => integer().nullable()(); // Add this line
 }
 
 class Bookmarks extends Table {
@@ -37,14 +45,15 @@ class Bookmarks extends Table {
   TextColumn get description => text().nullable()();
   TextColumn get imageUrl => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+  IntColumn get position => integer().nullable()(); // Add this line
 }
 
 @DriftDatabase(tables: [Boards, Bookmarks], daos: [BoardsDao, BookmarksDao])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6; // Increment schema version
 
   @override
   MigrationStrategy get migration {
@@ -59,6 +68,12 @@ class AppDatabase extends _$AppDatabase {
         if (from < 4) {
           await m.addColumn(boards, boards.manualThumbnailPath);
         }
+        if (from < 5) {
+          await m.addColumn(bookmarks, bookmarks.position);
+        }
+        if (from < 6) { // Add migration for new 'position' column in Boards
+          await m.addColumn(boards, boards.position);
+        }
       },
     );
   }
@@ -66,25 +81,28 @@ class AppDatabase extends _$AppDatabase {
 
 @DriftAccessor(tables: [Boards, Bookmarks])
 class BoardsDao extends DatabaseAccessor<AppDatabase> with _$BoardsDaoMixin {
-  BoardsDao(AppDatabase db) : super(db);
+  BoardsDao(super.db);
 
   Stream<List<BoardWithThumbnail>> watchAllBoardsWithThumbnails() {
     final query = customSelect(
-      'SELECT b.*, '
-      '(SELECT bm.image_url FROM bookmarks bm WHERE bm.board_id = b.id ORDER BY bm.created_at DESC LIMIT 1) as thumbnail_url, ' // Add comma here
-      'b.thumbnail_source, ' // Add comma here
-      'b.manual_thumbnail_path ' // Add this line to select the new column
-      'FROM boards b ORDER BY b.created_at DESC',
+      'SELECT b.*, (SELECT bm.image_url FROM bookmarks bm WHERE bm.board_id = b.id ORDER BY bm.created_at DESC LIMIT 1) as thumbnail_url, b.thumbnail_source, b.manual_thumbnail_path FROM boards b ORDER BY b.position ASC, b.created_at DESC', // Order by position
       readsFrom: {boards, bookmarks},
-    ).map((row) {
-      final board = boards.map(row.data);
-      final thumbnailUrl = row.read<String?>('thumbnail_url');
-      final thumbnailSource = ThumbnailSource.values[row.read<int>('thumbnail_source')];
-      final manualThumbnailPath = row.read<String?>('manual_thumbnail_path'); // Map the new column
-      return BoardWithThumbnail(board: board, thumbnailUrl: thumbnailUrl, thumbnailSource: thumbnailSource, manualThumbnailPath: manualThumbnailPath); // Pass the new field
-    });
+    );
 
-    return query.watch();
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        final board = boards.map(row.data);
+        final thumbnailUrl = row.read<String?>('thumbnail_url');
+        final thumbnailSource = ThumbnailSource.values[row.read<int>('thumbnail_source')];
+        final manualThumbnailPath = row.read<String?>('manual_thumbnail_path');
+        return BoardWithThumbnail(
+          board: board,
+          thumbnailUrl: thumbnailUrl,
+          thumbnailSource: thumbnailSource,
+          manualThumbnailPath: manualThumbnailPath,
+        );
+      }).toList();
+    });
   }
 
   Stream<List<Board>> watchAllBoards() => select(boards).watch();
@@ -96,7 +114,7 @@ class BoardsDao extends DatabaseAccessor<AppDatabase> with _$BoardsDaoMixin {
 
   Future<void> updateBoardThumbnailSource(int boardId, ThumbnailSource source) {
     return (update(boards)..where((b) => b.id.equals(boardId))).write(
-      BoardsCompanion(thumbnailSource: Value(source.index)),
+      BoardsCompanion(thumbnailSource: Value(source)),
     );
   }
 
@@ -105,11 +123,17 @@ class BoardsDao extends DatabaseAccessor<AppDatabase> with _$BoardsDaoMixin {
       BoardsCompanion(manualThumbnailPath: Value(path)),
     );
   }
+
+  Future<void> updateBoardPosition(int boardId, int position) {
+    return (update(boards)..where((b) => b.id.equals(boardId))).write(
+      BoardsCompanion(position: Value(position)),
+    );
+  }
 }
 
 @DriftAccessor(tables: [Bookmarks])
 class BookmarksDao extends DatabaseAccessor<AppDatabase> with _$BookmarksDaoMixin {
-  BookmarksDao(AppDatabase db) : super(db);
+  BookmarksDao(super.db);
 
   Stream<List<Bookmark>> watchBookmarksInBoard(int boardId) {
     return (select(bookmarks)..where((b) => b.boardId.equals(boardId))).watch();
@@ -159,12 +183,21 @@ class BookmarksDao extends DatabaseAccessor<AppDatabase> with _$BookmarksDaoMixi
       update(bookmarks).replace(bookmark);
   Future<int> deleteBookmark(int id) =>
       (delete(bookmarks)..where((b) => b.id.equals(id))).go();
+
+  Future<void> deleteBookmarksByIds(List<int> ids) {
+    return (delete(bookmarks)..where((b) => b.id.isIn(ids))).go();
+  }
+
+  Future<void> updateBookmarksBoardId(List<int> ids, int newBoardId) {
+    return (update(bookmarks)..where((b) => b.id.isIn(ids))).write(
+      BookmarksCompanion(boardId: Value(newBoardId)),
+    );
+  }
+
+  Future<void> updateBookmarkPosition(int bookmarkId, int position) {
+    return (update(bookmarks)..where((b) => b.id.equals(bookmarkId))).write(
+      BookmarksCompanion(position: Value(position)),
+    );
+  }
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'db.sqlite'));
-    return NativeDatabase(file);
-  });
-}

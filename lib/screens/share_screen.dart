@@ -3,20 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:pebble_board/database/database.dart';
+import 'package:pebble_board/models/board_with_thumbnail.dart';
+import 'package:pebble_board/providers/boards_with_thumbnails_provider.dart';
 import 'package:pebble_board/providers/database_provider.dart';
-import 'package:pebble_board/models/board_with_thumbnail.dart'; // New import
-import 'package:pebble_board/providers/paginated_bookmarks_provider.dart'; // New import
-
-final boardsWithThumbnailsProvider = StreamProvider<List<BoardWithThumbnail>>((ref) {
-  final dao = ref.watch(boardsDaoProvider);
-  return dao.watchAllBoardsWithThumbnails();
-});
+import 'package:pebble_board/providers/paginated_bookmarks_provider.dart';
+import 'package:pebble_board/providers/settings_provider.dart';
+import 'package:pebble_board/utils/app_constants.dart';
+import 'package:pebble_board/utils/dialog_utils.dart';
+import 'package:pebble_board/utils/link_utils.dart';
 
 class ShareScreen extends ConsumerStatefulWidget {
   final String sharedUrl;
   final Bookmark? initialBookmark; // New optional parameter
+  final int? boardId;
+  final String? initialTitle;
+  final String? initialDescription;
+  final String? initialImageUrl;
 
-  const ShareScreen({super.key, required this.sharedUrl, this.initialBookmark}); // Updated constructor
+  const ShareScreen({
+    super.key,
+    required this.sharedUrl,
+    this.initialBookmark,
+    this.boardId,
+    this.initialTitle,
+    this.initialDescription,
+    this.initialImageUrl,
+  }); // Updated constructor
 
   @override
   ConsumerState<ShareScreen> createState() => _ShareScreenState();
@@ -30,28 +42,65 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
   String? _error;
   Board? _selectedBoard;
   bool _isSaving = false;
+  late final String _sanitizedUrl;
+  
+  bool _isInitialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.initialBookmark != null) {
-      _titleController.text = widget.initialBookmark!.title ?? '';
-      _descriptionController.text = widget.initialBookmark!.description ?? '';
-      _imageUrlController.text = widget.initialBookmark!.imageUrl ?? '';
-      _isLoadingMetadata = false; // No need to fetch metadata for existing bookmark
-      _fetchInitialBoard(); // Fetch the board object for _selectedBoard
-    } else {
-      _fetchMetadata();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      final sanitizeLinks = ref.read(settingsProvider).sanitizeLinks;
+      _sanitizedUrl = sanitizeLinks ? LinkUtils.sanitizeUrl(widget.sharedUrl) : widget.sharedUrl;
+      if (widget.initialBookmark != null) {
+        _titleController.text = widget.initialBookmark!.title ?? '';
+        _descriptionController.text = widget.initialBookmark!.description ?? '';
+        _imageUrlController.text = widget.initialBookmark!.imageUrl ?? '';
+        _isLoadingMetadata = false; // No need to fetch metadata for existing bookmark
+        _fetchInitialBoard(); // Fetch the board object for _selectedBoard
+      } else if (widget.initialTitle != null || widget.initialDescription != null || widget.initialImageUrl != null) {
+        // Use pre-fetched metadata from the AddUrlDialog
+        _titleController.text = widget.initialTitle ?? '';
+        _descriptionController.text = widget.initialDescription ?? '';
+        _imageUrlController.text = widget.initialImageUrl ?? '';
+        _isLoadingMetadata = false; // Metadata already provided
+      } else {
+        _fetchMetadata(); // Fetch metadata if not provided
+      }
+
+      if (widget.boardId != null) {
+        _fetchBoardFromId(widget.boardId!); // Pass the boardId to the new function
+      }
+      _isInitialized = true;
     }
   }
 
   Future<void> _fetchInitialBoard() async {
     if (widget.initialBookmark != null) {
+      try { // Added try block
+        final dao = ref.read(boardsDaoProvider);
+        final board = await dao.getBoardById(widget.initialBookmark!.boardId);
+        if (!mounted) return;
+        setState(() {
+          _selectedBoard = board;
+        });
+      } catch (e) {
+        _error = 'Failed to fetch initial board: $e';
+      }
+    }
+  }
+
+  // New function to fetch board from ID
+  Future<void> _fetchBoardFromId(int boardId) async {
+    try {
       final dao = ref.read(boardsDaoProvider);
-      final board = await dao.getBoardById(widget.initialBookmark!.boardId);
+      final board = await dao.getBoardById(boardId);
+      if (!mounted) return;
       setState(() {
         _selectedBoard = board;
       });
+    } catch (e) {
+      _error = 'Failed to fetch board: $e';
     }
   }
 
@@ -59,11 +108,12 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
     if (widget.initialBookmark != null) return; // Only fetch if it's a new bookmark
 
     try {
-      final metadata = await MetadataFetch.extract(widget.sharedUrl);
+      final metadata = await MetadataFetch.extract(_sanitizedUrl);
       _titleController.text = metadata?.title ?? '';
       _descriptionController.text = metadata?.description ?? '';
       _imageUrlController.text = metadata?.image ?? '';
     } catch (e) {
+      print('Error fetching metadata: $e');
       _error = 'Failed to fetch metadata: $e';
     } finally {
       setState(() {
@@ -75,14 +125,14 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
   Future<void> _saveBookmark() async {
     if (_selectedBoard == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a board or create a new one.')),
+        const SnackBar(content: Text(AppConstants.noBoardSelectedMessage)),
       );
       return;
     }
 
     if (_titleController.text.isEmpty && _descriptionController.text.isEmpty && _imageUrlController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide at least a title, description, or image URL.')),
+        const SnackBar(content: Text(AppConstants.provideBookmarkDetailsMessage)),
       );
       return;
     }
@@ -93,26 +143,37 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
 
     try {
       final dao = ref.read(bookmarksDaoProvider);
-      final domain = Uri.parse(widget.sharedUrl).host;
+      final domain = Uri.parse(_sanitizedUrl).host;
 
       if (widget.initialBookmark != null) {
         // Update existing bookmark
-        await dao.updateBookmark(BookmarksCompanion(
+        final updatedBookmark = BookmarksCompanion(
           id: Value(widget.initialBookmark!.id),
           boardId: Value(_selectedBoard!.id),
-          url: Value(widget.sharedUrl),
+          url: Value(_sanitizedUrl),
           domain: Value(domain),
           title: Value(_titleController.text.isEmpty ? null : _titleController.text),
           description: Value(_descriptionController.text.isEmpty ? null : _descriptionController.text),
           imageUrl: Value(_imageUrlController.text.isEmpty ? null : _imageUrlController.text),
           createdAt: Value(widget.initialBookmark!.createdAt), // Keep original creation date
-        ));
+        );
+        final oldBoardId = widget.initialBookmark!.boardId;
+        await dao.updateBookmark(updatedBookmark);
+        final savedBookmark = await (dao.select(dao.bookmarks)..where((b) => b.id.equals(widget.initialBookmark!.id))).getSingle();
+
+        if (oldBoardId != _selectedBoard!.id) {
+          ref.read(paginatedBookmarksProvider(oldBoardId).notifier).removeBookmark(widget.initialBookmark!.id);
+          ref.read(paginatedBookmarksProvider(_selectedBoard!.id).notifier).addBookmark(savedBookmark);
+        } else {
+          ref.read(paginatedBookmarksProvider(_selectedBoard!.id).notifier).updateBookmark(savedBookmark);
+        }
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Bookmark updated in ${_selectedBoard!.name}')),
         );
       } else {
         // Insert new bookmark
-        await dao.insertBookmark(BookmarksCompanion.insert(
+        final newBookmark = BookmarksCompanion.insert(
           boardId: _selectedBoard!.id,
           url: widget.sharedUrl,
           domain: domain,
@@ -120,72 +181,29 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
           description: Value(_descriptionController.text.isEmpty ? null : _descriptionController.text),
           imageUrl: Value(_imageUrlController.text.isEmpty ? null : _imageUrlController.text),
           createdAt: DateTime.now(),
-        ));
+        );
+        final id = await dao.insertBookmark(newBookmark);
+        final savedBookmark = await (dao.select(dao.bookmarks)..where((b) => b.id.equals(id))).getSingle();
+        ref.read(paginatedBookmarksProvider(_selectedBoard!.id).notifier).addBookmark(savedBookmark);
+        if (!mounted) return; // Add this line
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Saved to ${_selectedBoard!.name}')),
         );
       }
 
       if (mounted) {
-        // Trigger refresh for the specific board's bookmarks
-        ref.read(paginatedBookmarksProvider(_selectedBoard!.id).notifier).fetchFirstPage();
-
         Navigator.of(context).pop();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Error saving bookmark: $e')),
-        );
-        setState(() {
-          _isSaving = false;
-        });
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving bookmark: $e')),
+      );
+      if (!mounted) return; // Add this check here
+      setState(() {
+        _isSaving = false;
+      });
     }
-  }
-
-  Future<Board?> _showAddBoardDialog(BuildContext context, WidgetRef ref) async {
-    final TextEditingController controller = TextEditingController();
-    return await showDialog<Board?>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('New Board'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Board Name',
-              hintText: 'e.g. Design Inspiration',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(null),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (controller.text.isNotEmpty) {
-                  final dao = ref.read(boardsDaoProvider);
-                  final newBoardId = await dao.insertBoard(BoardsCompanion.insert(
-                    name: controller.text,
-                    createdAt: DateTime.now(),
-                  ));
-                  final newBoard = await dao.getBoardById(newBoardId);
-                  Navigator.of(dialogContext).pop(newBoard);
-                } else {
-                  Navigator.of(dialogContext).pop(null);
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -206,9 +224,18 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
         // Removed actions here
       ),
       body: _isLoadingMetadata
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Fetching URL details...'),
+                ],
+              ),
+            )
           : _error != null
-              ? Center(child: Text('Error: $_error'))
+              ? Center(child: Text('Failed to load URL details: $_error. Please check the URL or enter details manually.'))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -222,12 +249,12 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Original URL:',
+                                'Sanitized URL:',
                                 style: Theme.of(context).textTheme.labelLarge,
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                widget.sharedUrl,
+                                _sanitizedUrl,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
                               ),
                               const SizedBox(height: 16),
@@ -242,7 +269,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                                       width: double.infinity,
                                       errorBuilder: (context, error, stackTrace) => Container(
                                         height: 180,
-                                        color: Theme.of(context).colorScheme.surfaceVariant,
+                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                         child: Icon(
                                           Icons.image_not_supported_outlined,
                                           size: 80,
@@ -312,7 +339,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                                   return Column(
                                     children: [
                                       DropdownButtonFormField<Board>(
-                                        value: _selectedBoard,
+                                        initialValue: _selectedBoard,
                                         hint: const Text('Select a Board'),
                                         decoration: const InputDecoration(
                                           border: OutlineInputBorder(),
@@ -335,7 +362,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                                         width: double.infinity, // Make button full width
                                         child: OutlinedButton.icon( // Changed to OutlinedButton
                                           onPressed: () async {
-                                            final newBoard = await _showAddBoardDialog(context, ref);
+                                            final newBoard = await showAddBoardDialog(context, ref);
                                             if (newBoard != null) {
                                               setState(() {
                                                 _selectedBoard = newBoard;
@@ -374,7 +401,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator.adaptive(strokeWidth: 2),
                               ) : const Icon(Icons.save),
-                              label: Text(_isSaving ? 'Saving...' : (widget.initialBookmark != null ? 'Update Bookmark' : 'Save Bookmark')), // Dynamic label
+                              label: Text(_isSaving ? 'Saving...' : (widget.initialBookmark != null ? 'Update Bookmark' : 'Save Bookmark')),
                             ),
                           ),
                         ],

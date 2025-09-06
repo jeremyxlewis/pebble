@@ -1,89 +1,94 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pebble_board/providers/settings_keys.dart';
+import 'package:pebble_board/providers/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pebble_board/theme/app_theme.dart';
 
 enum BoardView { grid, list }
+enum AppThemeMode { light, dark, system, oledDark }
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError();
+});
+
+final settingsServiceProvider = Provider<SettingsService>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return SharedPreferencesService(prefs);
+});
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
-  return SettingsNotifier();
+  final settingsService = ref.watch(settingsServiceProvider);
+  return SettingsNotifier(settingsService);
 });
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
-  SettingsNotifier() : super(AppSettings.initial()) {
+  final SettingsService _settingsService;
+
+  SettingsNotifier(this._settingsService) : super(AppSettings.initial()) {
     _loadSettings();
   }
 
-  static const String _themeModeKey = 'theme_mode';
-  static const String _accentColorKey = 'accent_color';
-  static const String _boardViewKey = 'board_view';
-
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final themeModeName = prefs.getString(_themeModeKey) ?? ThemeMode.dark.name;
-    final colorValue = prefs.getInt(_accentColorKey) ?? AppTheme.accentColors.first.value;
-    final boardViewName = prefs.getString(_boardViewKey) ?? BoardView.grid.name;
+    final themeModeName = await _settingsService.getString(SettingsKeys.themeMode) ?? AppThemeMode.system.name;
+    final boardViewName = await _settingsService.getString(SettingsKeys.boardView) ?? BoardView.grid.name;
+    final sanitizeLinks = await _settingsService.getBool(SettingsKeys.sanitizeLinks) ?? true;
 
     state = AppSettings(
-      themeMode: ThemeMode.values.firstWhere((e) => e.name == themeModeName),
-      accentColor: Color(colorValue),
+      themeMode: AppThemeMode.values.firstWhere((e) => e.name == themeModeName),
       boardView: BoardView.values.firstWhere((e) => e.name == boardViewName),
+      sanitizeLinks: sanitizeLinks,
     );
   }
 
-  void setThemeMode(ThemeMode themeMode) async {
+  void setThemeMode(AppThemeMode themeMode) async {
     if (state.themeMode != themeMode) {
       state = state.copyWith(themeMode: themeMode);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_themeModeKey, themeMode.name);
-    }
-  }
-
-  void setAccentColor(Color accentColor) async {
-    if (state.accentColor != accentColor) {
-      state = state.copyWith(accentColor: accentColor);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_accentColorKey, accentColor.value);
+      await _settingsService.setString(SettingsKeys.themeMode, themeMode.name);
     }
   }
 
   void setBoardView(BoardView boardView) async {
     if (state.boardView != boardView) {
       state = state.copyWith(boardView: boardView);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_boardViewKey, boardView.name);
+      await _settingsService.setString(SettingsKeys.boardView, boardView.name);
+    }
+  }
+
+  void setSanitizeLinks(bool sanitizeLinks) async {
+    if (state.sanitizeLinks != sanitizeLinks) {
+      state = state.copyWith(sanitizeLinks: sanitizeLinks);
+      await _settingsService.setBool(SettingsKeys.sanitizeLinks, sanitizeLinks);
     }
   }
 }
 
 class AppSettings {
-  final ThemeMode themeMode;
-  final Color accentColor;
+  final AppThemeMode themeMode;
   final BoardView boardView;
+  final bool sanitizeLinks;
 
   AppSettings({
     required this.themeMode,
-    required this.accentColor,
     required this.boardView,
+    required this.sanitizeLinks,
   });
 
   factory AppSettings.initial() {
     return AppSettings(
-      themeMode: ThemeMode.dark,
-      accentColor: AppTheme.accentColors.first,
-      boardView: BoardView.grid, // Default to grid view
+      themeMode: AppThemeMode.system,
+      boardView: BoardView.grid,
+      sanitizeLinks: true,
     );
   }
 
   AppSettings copyWith({
-    ThemeMode? themeMode,
-    Color? accentColor,
+    AppThemeMode? themeMode,
     BoardView? boardView,
+    bool? sanitizeLinks,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
-      accentColor: accentColor ?? this.accentColor,
       boardView: boardView ?? this.boardView,
+      sanitizeLinks: sanitizeLinks ?? this.sanitizeLinks,
     );
   }
 }

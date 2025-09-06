@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pebble_board/providers/settings_provider.dart';
-import 'package:pebble_board/theme/app_theme.dart';
+
 import 'dart:io'; // New import
 import 'package:path_provider/path_provider.dart'; // New import
 import 'package:path/path.dart' as p; // New import
 import 'package:file_picker/file_picker.dart'; // New import
+import 'package:pebble_board/app_routes.dart'; // New import
+import 'package:pebble_board/utils/app_constants.dart'; // New import
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -30,11 +32,7 @@ class SettingsScreen extends ConsumerWidget {
                 currentThemeMode: appSettings.themeMode,
                 onChanged: (mode) => settingsNotifier.setThemeMode(mode!),
               ),
-              const SizedBox(height: 24),
-              _AccentColorSelector(
-                selectedColor: appSettings.accentColor,
-                onColorSelected: (color) => settingsNotifier.setAccentColor(color),
-              ),
+              
             ],
           ),
           const SizedBox(height: 24),
@@ -44,6 +42,28 @@ class SettingsScreen extends ConsumerWidget {
               _BoardViewControl(
                 currentView: appSettings.boardView,
                 onChanged: (view) => settingsNotifier.setBoardView(view!),
+              ),
+              ListTile(
+                title: const Text('Board Thumbnail Settings'),
+                subtitle: const Text('Customize how board thumbnails are displayed.'),
+                onTap: () => context.push(AppRoutes.boardThumbnailSettings),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+          _SettingsSection(
+            title: 'Privacy',
+            children: [
+              SwitchListTile(
+                title: const Text('Sanitize Links'),
+                subtitle: const Text('Remove tracking parameters from URLs when adding new bookmarks.'),
+                value: appSettings.sanitizeLinks,
+                onChanged: (value) => settingsNotifier.setSanitizeLinks(value),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ],
           ),
@@ -76,7 +96,7 @@ class SettingsScreen extends ConsumerWidget {
               ListTile(
                 title: const Text('About & Privacy'),
                 subtitle: const Text('Our philosophy and how we handle data.'),
-                onTap: () => context.push('/settings/about'),
+                onTap: () => context.push(AppRoutes.about),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -94,14 +114,15 @@ class SettingsScreen extends ConsumerWidget {
       final dbFile = File(p.join(dbFolder.path, 'db.sqlite'));
 
       if (!await dbFile.exists()) {
+        if (!context.mounted) return; // Add this line
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database file not found.')),
+          const SnackBar(content: Text(AppConstants.databaseFileNotFoundMessage)),
         );
         return;
       }
 
       final result = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export Database',
+        dialogTitle: AppConstants.exportDatabaseDialogTitle,
         fileName: 'pebble_board_backup.sqlite',
         type: FileType.custom,
         allowedExtensions: ['sqlite'],
@@ -110,11 +131,13 @@ class SettingsScreen extends ConsumerWidget {
       if (result != null) {
         final newFile = File(result); // Corrected: result is already the path string
         await dbFile.copy(newFile.path);
+        if (!context.mounted) return; // Add this check here
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Database exported to ${newFile.path}')),
         );
       }
     } catch (e) {
+      if (!context.mounted) return; // Add this line
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to export database: $e')),
       );
@@ -130,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
       );
 
       if (result != null && result.files.single.path != null) {
-        final selectedFile = File(result.files.single.path!);
+        final selectedFile = File(result.files.single.path!); 
         final dbFolder = await getApplicationDocumentsDirectory();
         final dbFile = File(p.join(dbFolder.path, 'db.sqlite'));
 
@@ -140,18 +163,21 @@ class SettingsScreen extends ConsumerWidget {
 
         await selectedFile.copy(dbFile.path);
 
+        if (!context.mounted) return; // Add this line
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Database imported. Please restart the app.'),
+            content: Text(AppConstants.databaseImportedRestartMessage),
             duration: Duration(seconds: 5),
           ),
         );
       } else {
+        if (!context.mounted) return; // Add this line
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No file selected.')),
+          const SnackBar(content: Text(AppConstants.noFileSelectedMessage)),
         );
       }
     } catch (e) {
+      if (!context.mounted) return; // Add this line
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to import database: $e')),
       );
@@ -160,8 +186,8 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 class _ThemeModeControl extends StatelessWidget {
-  final ThemeMode currentThemeMode;
-  final ValueChanged<ThemeMode?> onChanged;
+  final AppThemeMode currentThemeMode;
+  final ValueChanged<AppThemeMode?> onChanged;
 
   const _ThemeModeControl({required this.currentThemeMode, required this.onChanged});
 
@@ -177,11 +203,12 @@ class _ThemeModeControl extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        SegmentedButton<ThemeMode>(
+        SegmentedButton<AppThemeMode>(
           segments: const [
-            ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.wb_sunny)),
-            ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.brightness_auto)),
-            ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.nightlight_round)),
+            ButtonSegment(value: AppThemeMode.light, label: Text('Light'), icon: Icon(Icons.wb_sunny)),
+            ButtonSegment(value: AppThemeMode.system, label: Text('System'), icon: Icon(Icons.brightness_auto)),
+            ButtonSegment(value: AppThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.nightlight_round)),
+            ButtonSegment(value: AppThemeMode.oledDark, label: Text('OLED Dark'), icon: Icon(Icons.brightness_2)),
           ],
           selected: {currentThemeMode},
           onSelectionChanged: (newSelection) => onChanged(newSelection.first),
@@ -191,49 +218,7 @@ class _ThemeModeControl extends StatelessWidget {
   }
 }
 
-class _AccentColorSelector extends StatelessWidget {
-  final Color selectedColor;
-  final ValueChanged<Color> onColorSelected;
 
-  const _AccentColorSelector({required this.selectedColor, required this.onColorSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, bottom: 12.0),
-          child: Text(
-            'Accent Color',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
-        SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: AppTheme.accentColors.length,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final color = AppTheme.accentColors[index];
-              final isSelected = color.value == selectedColor.value;
-              return GestureDetector(
-                onTap: () => onColorSelected(color),
-                child: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: color,
-                  child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _BoardViewControl extends StatelessWidget {
   final BoardView currentView;

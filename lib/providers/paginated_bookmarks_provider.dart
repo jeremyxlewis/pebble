@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pebble_board/database/database.dart';
 import 'package:pebble_board/providers/database_provider.dart';
 
-const int _pageSize = 20;
+const int kPageSize = 20;
 
 final paginatedBookmarksProvider = StateNotifierProvider.family<
     PaginatedBookmarksNotifier, PaginatedBookmarksState, int>((ref, boardId) {
@@ -17,7 +17,7 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
 
   PaginatedBookmarksNotifier(this._bookmarksDao, this._boardId)
       : super(PaginatedBookmarksState.initial()) {
-    print('PaginatedBookmarksNotifier initialized for boardId: $_boardId');
+    // print('PaginatedBookmarksNotifier initialized for boardId: $_boardId');
     fetchFirstPage();
   }
 
@@ -35,26 +35,26 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
 
   Future<void> _fetchNextPage() async {
     if (state.isLoading && state.bookmarks.isNotEmpty) {
-      print('Already loading or has data. Skipping fetch for boardId: $_boardId');
+      // print('Already loading or has data. Skipping fetch for boardId: $_boardId');
       return;
     }
     if (!state.hasMore && state.bookmarks.isNotEmpty) {
-      print('No more data to fetch. Skipping fetch for boardId: $_boardId');
+      // print('No more data to fetch. Skipping fetch for boardId: $_boardId');
       return;
     }
 
     state = state.copyWith(isLoading: true);
-    print('Fetching next page for boardId: $_boardId, offset: $_offset, query: $_searchQuery');
+    // print('Fetching next page for boardId: $_boardId, offset: $_offset, query: $_searchQuery');
 
     try {
       final newBookmarks = await _bookmarksDao.getBookmarksForBoard(
         _boardId,
-        limit: _pageSize,
+        limit: kPageSize,
         offset: _offset,
         searchQuery: _searchQuery, // Pass search query
       );
 
-      final hasMore = newBookmarks.length == _pageSize;
+      final hasMore = newBookmarks.length == kPageSize;
       _offset += newBookmarks.length;
 
       state = state.copyWith(
@@ -62,10 +62,10 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
         isLoading: false,
         hasMore: hasMore,
       );
-      print('Fetched ${newBookmarks.length} bookmarks. Total: ${state.bookmarks.length}, hasMore: $hasMore');
-    } catch (e, stack) {
+      // print('Fetched ${newBookmarks.length} bookmarks. Total: ${state.bookmarks.length}, hasMore: $hasMore');
+    } catch (e) {
       state = state.copyWith(error: e, isLoading: false);
-      print('Error fetching bookmarks for boardId $_boardId: $e');
+      // print('Error fetching bookmarks for boardId $_boardId: $e');
     }
   }
 
@@ -81,6 +81,32 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
     state = state.copyWith(
       bookmarks: state.bookmarks.where((b) => b.id != bookmarkId).toList(),
     );
+  }
+
+  void removeBookmarksByIds(List<int> ids) {
+    state = state.copyWith(
+      bookmarks: state.bookmarks.where((b) => !ids.contains(b.id)).toList(),
+    );
+  }
+
+  void updateBookmark(Bookmark updatedBookmark) {
+    state = state.copyWith(
+      bookmarks: state.bookmarks.map((bookmark) {
+        return bookmark.id == updatedBookmark.id ? updatedBookmark : bookmark;
+      }).toList(),
+    );
+  }
+
+  void reorderBookmarks(int oldIndex, int newIndex) {
+    final List<Bookmark> updatedBookmarks = List.from(state.bookmarks);
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final Bookmark movedBookmark = updatedBookmarks.removeAt(oldIndex);
+    updatedBookmarks.insert(newIndex, movedBookmark);
+
+    // Update the state with the reordered list
+    state = state.copyWith(bookmarks: updatedBookmarks);
   }
 }
 

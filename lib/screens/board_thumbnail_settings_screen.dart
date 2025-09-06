@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pebble_board/database/database.dart';
-import 'package:pebble_board/models/board_with_thumbnail.dart';
+import 'package:pebble_board/providers/boards_with_thumbnails_provider.dart';
 import 'package:pebble_board/providers/database_provider.dart';
-import 'package:pebble_board/screens/home_screen.dart'; // New import
+import 'package:pebble_board/utils/app_constants.dart';
 
 class BoardThumbnailSettingsScreen extends ConsumerWidget {
   const BoardThumbnailSettingsScreen({super.key});
@@ -61,40 +60,56 @@ class BoardThumbnailSettingsScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Choose Thumbnail Source'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThumbnailSource>(
-                title: const Text('Automatic (last saved bookmark)'),
-                value: ThumbnailSource.auto,
-                groupValue: currentSource,
-                onChanged: (ThumbnailSource? value) {
-                  if (value != null) {
-                    ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
-                    Navigator.of(dialogContext).pop();
-                  }
-                },
-              ),
-              RadioListTile<ThumbnailSource>(
-                title: const Text('Manual (choose from gallery)'),
-                value: ThumbnailSource.manual,
-                groupValue: currentSource,
-                onChanged: (ThumbnailSource? value) async {
-                  if (value != null) {
-                    ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
-                    Navigator.of(dialogContext).pop();
-                    if (value == ThumbnailSource.manual) {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                      if (image != null) {
-                        ref.read(boardsDaoProvider).updateBoardManualThumbnailPath(boardId, image.path);
+          title: const Text(AppConstants.chooseThumbnailSourceDialogTitle),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              bool isPickingImage = false; // State for loading indicator
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<ThumbnailSource>(
+                    title: const Text('Automatic (last saved bookmark)'),
+                    value: ThumbnailSource.auto,
+                    groupValue: currentSource,
+                    onChanged: (ThumbnailSource? value) {
+                      if (value != null) {
+                        ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
+                        Navigator.of(dialogContext).pop();
                       }
-                    }
-                  }
-                },
-              ),
-            ],
+                    },
+                  ),
+                  RadioListTile<ThumbnailSource>(
+                    title: const Text('Manual (choose from gallery)'),
+                    value: ThumbnailSource.manual,
+                    groupValue: currentSource,
+                    onChanged: (ThumbnailSource? value) async {
+                      if (value != null) {
+                        ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
+                        Navigator.of(dialogContext).pop();
+                        if (value == ThumbnailSource.manual) {
+                          setState(() {
+                            isPickingImage = true;
+                          });
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            ref.read(boardsDaoProvider).updateBoardManualThumbnailPath(boardId, image.path);
+                          }
+                          setState(() {
+                            isPickingImage = false;
+                          });
+                        }
+                      }
+                    },
+                  ),
+                  if (isPickingImage) // Show loading indicator
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(

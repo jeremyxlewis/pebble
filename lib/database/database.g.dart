@@ -41,18 +41,16 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _thumbnailSourceMeta = const VerificationMeta(
-    'thumbnailSource',
-  );
   @override
-  late final GeneratedColumn<int> thumbnailSource = GeneratedColumn<int>(
+  late final GeneratedColumnWithTypeConverter<ThumbnailSource, int>
+  thumbnailSource = GeneratedColumn<int>(
     'thumbnail_source',
     aliasedName,
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
-  );
+  ).withConverter<ThumbnailSource>($BoardsTable.$converterthumbnailSource);
   static const VerificationMeta _manualThumbnailPathMeta =
       const VerificationMeta('manualThumbnailPath');
   @override
@@ -64,6 +62,17 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -71,6 +80,7 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
     createdAt,
     thumbnailSource,
     manualThumbnailPath,
+    position,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -103,15 +113,6 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
-    if (data.containsKey('thumbnail_source')) {
-      context.handle(
-        _thumbnailSourceMeta,
-        thumbnailSource.isAcceptableOrUnknown(
-          data['thumbnail_source']!,
-          _thumbnailSourceMeta,
-        ),
-      );
-    }
     if (data.containsKey('manual_thumbnail_path')) {
       context.handle(
         _manualThumbnailPathMeta,
@@ -119,6 +120,12 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
           data['manual_thumbnail_path']!,
           _manualThumbnailPathMeta,
         ),
+      );
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
       );
     }
     return context;
@@ -142,13 +149,19 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
-      thumbnailSource: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}thumbnail_source'],
-      )!,
+      thumbnailSource: $BoardsTable.$converterthumbnailSource.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}thumbnail_source'],
+        )!,
+      ),
       manualThumbnailPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}manual_thumbnail_path'],
+      ),
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
       ),
     );
   }
@@ -157,20 +170,25 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
   $BoardsTable createAlias(String alias) {
     return $BoardsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<ThumbnailSource, int> $converterthumbnailSource =
+      const ThumbnailSourceConverter();
 }
 
 class Board extends DataClass implements Insertable<Board> {
   final int id;
   final String name;
   final DateTime createdAt;
-  final int thumbnailSource;
+  final ThumbnailSource thumbnailSource;
   final String? manualThumbnailPath;
+  final int? position;
   const Board({
     required this.id,
     required this.name,
     required this.createdAt,
     required this.thumbnailSource,
     this.manualThumbnailPath,
+    this.position,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -178,9 +196,16 @@ class Board extends DataClass implements Insertable<Board> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['created_at'] = Variable<DateTime>(createdAt);
-    map['thumbnail_source'] = Variable<int>(thumbnailSource);
+    {
+      map['thumbnail_source'] = Variable<int>(
+        $BoardsTable.$converterthumbnailSource.toSql(thumbnailSource),
+      );
+    }
     if (!nullToAbsent || manualThumbnailPath != null) {
       map['manual_thumbnail_path'] = Variable<String>(manualThumbnailPath);
+    }
+    if (!nullToAbsent || position != null) {
+      map['position'] = Variable<int>(position);
     }
     return map;
   }
@@ -194,6 +219,9 @@ class Board extends DataClass implements Insertable<Board> {
       manualThumbnailPath: manualThumbnailPath == null && nullToAbsent
           ? const Value.absent()
           : Value(manualThumbnailPath),
+      position: position == null && nullToAbsent
+          ? const Value.absent()
+          : Value(position),
     );
   }
 
@@ -206,10 +234,13 @@ class Board extends DataClass implements Insertable<Board> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      thumbnailSource: serializer.fromJson<int>(json['thumbnailSource']),
+      thumbnailSource: serializer.fromJson<ThumbnailSource>(
+        json['thumbnailSource'],
+      ),
       manualThumbnailPath: serializer.fromJson<String?>(
         json['manualThumbnailPath'],
       ),
+      position: serializer.fromJson<int?>(json['position']),
     );
   }
   @override
@@ -219,8 +250,9 @@ class Board extends DataClass implements Insertable<Board> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'createdAt': serializer.toJson<DateTime>(createdAt),
-      'thumbnailSource': serializer.toJson<int>(thumbnailSource),
+      'thumbnailSource': serializer.toJson<ThumbnailSource>(thumbnailSource),
       'manualThumbnailPath': serializer.toJson<String?>(manualThumbnailPath),
+      'position': serializer.toJson<int?>(position),
     };
   }
 
@@ -228,8 +260,9 @@ class Board extends DataClass implements Insertable<Board> {
     int? id,
     String? name,
     DateTime? createdAt,
-    int? thumbnailSource,
+    ThumbnailSource? thumbnailSource,
     Value<String?> manualThumbnailPath = const Value.absent(),
+    Value<int?> position = const Value.absent(),
   }) => Board(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -238,6 +271,7 @@ class Board extends DataClass implements Insertable<Board> {
     manualThumbnailPath: manualThumbnailPath.present
         ? manualThumbnailPath.value
         : this.manualThumbnailPath,
+    position: position.present ? position.value : this.position,
   );
   Board copyWithCompanion(BoardsCompanion data) {
     return Board(
@@ -250,6 +284,7 @@ class Board extends DataClass implements Insertable<Board> {
       manualThumbnailPath: data.manualThumbnailPath.present
           ? data.manualThumbnailPath.value
           : this.manualThumbnailPath,
+      position: data.position.present ? data.position.value : this.position,
     );
   }
 
@@ -260,14 +295,21 @@ class Board extends DataClass implements Insertable<Board> {
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
           ..write('thumbnailSource: $thumbnailSource, ')
-          ..write('manualThumbnailPath: $manualThumbnailPath')
+          ..write('manualThumbnailPath: $manualThumbnailPath, ')
+          ..write('position: $position')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, createdAt, thumbnailSource, manualThumbnailPath);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    createdAt,
+    thumbnailSource,
+    manualThumbnailPath,
+    position,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -276,21 +318,24 @@ class Board extends DataClass implements Insertable<Board> {
           other.name == this.name &&
           other.createdAt == this.createdAt &&
           other.thumbnailSource == this.thumbnailSource &&
-          other.manualThumbnailPath == this.manualThumbnailPath);
+          other.manualThumbnailPath == this.manualThumbnailPath &&
+          other.position == this.position);
 }
 
 class BoardsCompanion extends UpdateCompanion<Board> {
   final Value<int> id;
   final Value<String> name;
   final Value<DateTime> createdAt;
-  final Value<int> thumbnailSource;
+  final Value<ThumbnailSource> thumbnailSource;
   final Value<String?> manualThumbnailPath;
+  final Value<int?> position;
   const BoardsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.thumbnailSource = const Value.absent(),
     this.manualThumbnailPath = const Value.absent(),
+    this.position = const Value.absent(),
   });
   BoardsCompanion.insert({
     this.id = const Value.absent(),
@@ -298,6 +343,7 @@ class BoardsCompanion extends UpdateCompanion<Board> {
     required DateTime createdAt,
     this.thumbnailSource = const Value.absent(),
     this.manualThumbnailPath = const Value.absent(),
+    this.position = const Value.absent(),
   }) : name = Value(name),
        createdAt = Value(createdAt);
   static Insertable<Board> custom({
@@ -306,6 +352,7 @@ class BoardsCompanion extends UpdateCompanion<Board> {
     Expression<DateTime>? createdAt,
     Expression<int>? thumbnailSource,
     Expression<String>? manualThumbnailPath,
+    Expression<int>? position,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -314,6 +361,7 @@ class BoardsCompanion extends UpdateCompanion<Board> {
       if (thumbnailSource != null) 'thumbnail_source': thumbnailSource,
       if (manualThumbnailPath != null)
         'manual_thumbnail_path': manualThumbnailPath,
+      if (position != null) 'position': position,
     });
   }
 
@@ -321,8 +369,9 @@ class BoardsCompanion extends UpdateCompanion<Board> {
     Value<int>? id,
     Value<String>? name,
     Value<DateTime>? createdAt,
-    Value<int>? thumbnailSource,
+    Value<ThumbnailSource>? thumbnailSource,
     Value<String?>? manualThumbnailPath,
+    Value<int?>? position,
   }) {
     return BoardsCompanion(
       id: id ?? this.id,
@@ -330,6 +379,7 @@ class BoardsCompanion extends UpdateCompanion<Board> {
       createdAt: createdAt ?? this.createdAt,
       thumbnailSource: thumbnailSource ?? this.thumbnailSource,
       manualThumbnailPath: manualThumbnailPath ?? this.manualThumbnailPath,
+      position: position ?? this.position,
     );
   }
 
@@ -346,12 +396,17 @@ class BoardsCompanion extends UpdateCompanion<Board> {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
     if (thumbnailSource.present) {
-      map['thumbnail_source'] = Variable<int>(thumbnailSource.value);
+      map['thumbnail_source'] = Variable<int>(
+        $BoardsTable.$converterthumbnailSource.toSql(thumbnailSource.value),
+      );
     }
     if (manualThumbnailPath.present) {
       map['manual_thumbnail_path'] = Variable<String>(
         manualThumbnailPath.value,
       );
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
     }
     return map;
   }
@@ -363,7 +418,8 @@ class BoardsCompanion extends UpdateCompanion<Board> {
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
           ..write('thumbnailSource: $thumbnailSource, ')
-          ..write('manualThumbnailPath: $manualThumbnailPath')
+          ..write('manualThumbnailPath: $manualThumbnailPath, ')
+          ..write('position: $position')
           ..write(')'))
         .toString();
   }
@@ -460,6 +516,17 @@ class $BookmarksTable extends Bookmarks
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -470,6 +537,7 @@ class $BookmarksTable extends Bookmarks
     description,
     imageUrl,
     createdAt,
+    position,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -539,6 +607,12 @@ class $BookmarksTable extends Bookmarks
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
     return context;
   }
 
@@ -580,6 +654,10 @@ class $BookmarksTable extends Bookmarks
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      ),
     );
   }
 
@@ -598,6 +676,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
   final String? description;
   final String? imageUrl;
   final DateTime createdAt;
+  final int? position;
   const Bookmark({
     required this.id,
     required this.boardId,
@@ -607,6 +686,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
     this.description,
     this.imageUrl,
     required this.createdAt,
+    this.position,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -625,6 +705,9 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       map['image_url'] = Variable<String>(imageUrl);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || position != null) {
+      map['position'] = Variable<int>(position);
+    }
     return map;
   }
 
@@ -644,6 +727,9 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
           ? const Value.absent()
           : Value(imageUrl),
       createdAt: Value(createdAt),
+      position: position == null && nullToAbsent
+          ? const Value.absent()
+          : Value(position),
     );
   }
 
@@ -661,6 +747,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       description: serializer.fromJson<String?>(json['description']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      position: serializer.fromJson<int?>(json['position']),
     );
   }
   @override
@@ -675,6 +762,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       'description': serializer.toJson<String?>(description),
       'imageUrl': serializer.toJson<String?>(imageUrl),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'position': serializer.toJson<int?>(position),
     };
   }
 
@@ -687,6 +775,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
     Value<String?> description = const Value.absent(),
     Value<String?> imageUrl = const Value.absent(),
     DateTime? createdAt,
+    Value<int?> position = const Value.absent(),
   }) => Bookmark(
     id: id ?? this.id,
     boardId: boardId ?? this.boardId,
@@ -696,6 +785,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
     description: description.present ? description.value : this.description,
     imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
     createdAt: createdAt ?? this.createdAt,
+    position: position.present ? position.value : this.position,
   );
   Bookmark copyWithCompanion(BookmarksCompanion data) {
     return Bookmark(
@@ -709,6 +799,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
           : this.description,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      position: data.position.present ? data.position.value : this.position,
     );
   }
 
@@ -722,7 +813,8 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('imageUrl: $imageUrl, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('position: $position')
           ..write(')'))
         .toString();
   }
@@ -737,6 +829,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
     description,
     imageUrl,
     createdAt,
+    position,
   );
   @override
   bool operator ==(Object other) =>
@@ -749,7 +842,8 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
           other.title == this.title &&
           other.description == this.description &&
           other.imageUrl == this.imageUrl &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.position == this.position);
 }
 
 class BookmarksCompanion extends UpdateCompanion<Bookmark> {
@@ -761,6 +855,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
   final Value<String?> description;
   final Value<String?> imageUrl;
   final Value<DateTime> createdAt;
+  final Value<int?> position;
   const BookmarksCompanion({
     this.id = const Value.absent(),
     this.boardId = const Value.absent(),
@@ -770,6 +865,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     this.description = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.position = const Value.absent(),
   });
   BookmarksCompanion.insert({
     this.id = const Value.absent(),
@@ -780,6 +876,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     this.description = const Value.absent(),
     this.imageUrl = const Value.absent(),
     required DateTime createdAt,
+    this.position = const Value.absent(),
   }) : boardId = Value(boardId),
        url = Value(url),
        domain = Value(domain),
@@ -793,6 +890,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     Expression<String>? description,
     Expression<String>? imageUrl,
     Expression<DateTime>? createdAt,
+    Expression<int>? position,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -803,6 +901,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
       if (description != null) 'description': description,
       if (imageUrl != null) 'image_url': imageUrl,
       if (createdAt != null) 'created_at': createdAt,
+      if (position != null) 'position': position,
     });
   }
 
@@ -815,6 +914,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     Value<String?>? description,
     Value<String?>? imageUrl,
     Value<DateTime>? createdAt,
+    Value<int?>? position,
   }) {
     return BookmarksCompanion(
       id: id ?? this.id,
@@ -825,6 +925,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
       description: description ?? this.description,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
+      position: position ?? this.position,
     );
   }
 
@@ -855,6 +956,9 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
     return map;
   }
 
@@ -868,7 +972,8 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('imageUrl: $imageUrl, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('position: $position')
           ..write(')'))
         .toString();
   }
@@ -903,16 +1008,18 @@ typedef $$BoardsTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       required DateTime createdAt,
-      Value<int> thumbnailSource,
+      Value<ThumbnailSource> thumbnailSource,
       Value<String?> manualThumbnailPath,
+      Value<int?> position,
     });
 typedef $$BoardsTableUpdateCompanionBuilder =
     BoardsCompanion Function({
       Value<int> id,
       Value<String> name,
       Value<DateTime> createdAt,
-      Value<int> thumbnailSource,
+      Value<ThumbnailSource> thumbnailSource,
       Value<String?> manualThumbnailPath,
+      Value<int?> position,
     });
 
 final class $$BoardsTableReferences
@@ -962,13 +1069,19 @@ class $$BoardsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get thumbnailSource => $composableBuilder(
+  ColumnWithTypeConverterFilters<ThumbnailSource, ThumbnailSource, int>
+  get thumbnailSource => $composableBuilder(
     column: $table.thumbnailSource,
-    builder: (column) => ColumnFilters(column),
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<String> get manualThumbnailPath => $composableBuilder(
     column: $table.manualThumbnailPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1031,6 +1144,11 @@ class $$BoardsTableOrderingComposer
     column: $table.manualThumbnailPath,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BoardsTableAnnotationComposer
@@ -1051,15 +1169,19 @@ class $$BoardsTableAnnotationComposer
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<int> get thumbnailSource => $composableBuilder(
-    column: $table.thumbnailSource,
-    builder: (column) => column,
-  );
+  GeneratedColumnWithTypeConverter<ThumbnailSource, int> get thumbnailSource =>
+      $composableBuilder(
+        column: $table.thumbnailSource,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<String> get manualThumbnailPath => $composableBuilder(
     column: $table.manualThumbnailPath,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
 
   Expression<T> bookmarksRefs<T extends Object>(
     Expression<T> Function($$BookmarksTableAnnotationComposer a) f,
@@ -1118,28 +1240,32 @@ class $$BoardsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-                Value<int> thumbnailSource = const Value.absent(),
+                Value<ThumbnailSource> thumbnailSource = const Value.absent(),
                 Value<String?> manualThumbnailPath = const Value.absent(),
+                Value<int?> position = const Value.absent(),
               }) => BoardsCompanion(
                 id: id,
                 name: name,
                 createdAt: createdAt,
                 thumbnailSource: thumbnailSource,
                 manualThumbnailPath: manualThumbnailPath,
+                position: position,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
                 required DateTime createdAt,
-                Value<int> thumbnailSource = const Value.absent(),
+                Value<ThumbnailSource> thumbnailSource = const Value.absent(),
                 Value<String?> manualThumbnailPath = const Value.absent(),
+                Value<int?> position = const Value.absent(),
               }) => BoardsCompanion.insert(
                 id: id,
                 name: name,
                 createdAt: createdAt,
                 thumbnailSource: thumbnailSource,
                 manualThumbnailPath: manualThumbnailPath,
+                position: position,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -1197,6 +1323,7 @@ typedef $$BookmarksTableCreateCompanionBuilder =
       Value<String?> description,
       Value<String?> imageUrl,
       required DateTime createdAt,
+      Value<int?> position,
     });
 typedef $$BookmarksTableUpdateCompanionBuilder =
     BookmarksCompanion Function({
@@ -1208,6 +1335,7 @@ typedef $$BookmarksTableUpdateCompanionBuilder =
       Value<String?> description,
       Value<String?> imageUrl,
       Value<DateTime> createdAt,
+      Value<int?> position,
     });
 
 final class $$BookmarksTableReferences
@@ -1274,6 +1402,11 @@ class $$BookmarksTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1345,6 +1478,11 @@ class $$BookmarksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BoardsTableOrderingComposer get boardId {
     final $$BoardsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1400,6 +1538,9 @@ class $$BookmarksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
 
   $$BoardsTableAnnotationComposer get boardId {
     final $$BoardsTableAnnotationComposer composer = $composerBuilder(
@@ -1461,6 +1602,7 @@ class $$BookmarksTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<String?> imageUrl = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> position = const Value.absent(),
               }) => BookmarksCompanion(
                 id: id,
                 boardId: boardId,
@@ -1470,6 +1612,7 @@ class $$BookmarksTableTableManager
                 description: description,
                 imageUrl: imageUrl,
                 createdAt: createdAt,
+                position: position,
               ),
           createCompanionCallback:
               ({
@@ -1481,6 +1624,7 @@ class $$BookmarksTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<String?> imageUrl = const Value.absent(),
                 required DateTime createdAt,
+                Value<int?> position = const Value.absent(),
               }) => BookmarksCompanion.insert(
                 id: id,
                 boardId: boardId,
@@ -1490,6 +1634,7 @@ class $$BookmarksTableTableManager
                 description: description,
                 imageUrl: imageUrl,
                 createdAt: createdAt,
+                position: position,
               ),
           withReferenceMapper: (p0) => p0
               .map(

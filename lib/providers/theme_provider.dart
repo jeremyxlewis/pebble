@@ -18,11 +18,19 @@ class ThemeNotifier extends StateNotifier<ThemeSettings> {
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final themeModeName = prefs.getString(_themeModeKey) ?? ThemeMode.dark.name;
-    final colorValue = prefs.getInt(_accentColorKey) ?? AppTheme.accentColors.first.value;
+    final colorString = prefs.getString(_accentColorKey);
+
+    Color accentColor;
+    if (colorString != null) {
+      final parts = colorString.split(',').map((e) => int.parse(e)).toList();
+      accentColor = Color.fromARGB(parts[0], parts[1], parts[2], parts[3]);
+    } else {
+      accentColor = AppTheme.accentColors[0];
+    }
 
     state = ThemeSettings(
       themeMode: ThemeMode.values.firstWhere((e) => e.name == themeModeName),
-      accentColor: Color(colorValue),
+      accentColor: accentColor,
     );
   }
 
@@ -38,7 +46,9 @@ class ThemeNotifier extends StateNotifier<ThemeSettings> {
     if (state.accentColor != accentColor) {
       state = state.copyWith(accentColor: accentColor);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_accentColorKey, accentColor.value);
+      final colorString =
+          '${accentColor.alpha},${accentColor.red},${accentColor.green},${accentColor.blue}';
+      await prefs.setString(_accentColorKey, colorString);
     }
   }
 }
@@ -52,7 +62,7 @@ class ThemeSettings {
   factory ThemeSettings.initial() {
     return ThemeSettings(
       themeMode: ThemeMode.dark, // Default to dark mode
-      accentColor: AppTheme.accentColors.first,
+      accentColor: AppTheme.accentColors[0],
     );
   }
 

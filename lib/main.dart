@@ -6,9 +6,19 @@ import 'package:pebble_board/providers/settings_provider.dart';
 import 'package:pebble_board/router.dart';
 import 'package:pebble_board/theme/app_theme.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'package:pebble_board/app_routes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const ProviderScope(child: MyApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(ProviderScope(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -25,20 +35,21 @@ class _MyAppState extends ConsumerState<MyApp> {
   void initState() {
     super.initState();
     if (Platform.isAndroid || Platform.isIOS) {
-      _intentDataStreamSubscription =
-          ReceiveSharingIntent.instance.getMediaStream().listen((List<SharedMediaFile> value) {
-        if (value.isNotEmpty) {
-          final router = ref.read(routerProvider);
-          router.go('/share?url=${value.first.path}');
-        }
-      });
+      _initSharingIntents();
+    }
+  }
 
-      ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> value) {
-        if (value.isNotEmpty) {
-          final router = ref.read(routerProvider);
-          router.go('/share?url=${value.first.path}');
-        }
-      });
+  void _initSharingIntents() {
+    _intentDataStreamSubscription =
+        ReceiveSharingIntent.instance.getMediaStream().listen(_handleSharedMedia);
+
+    ReceiveSharingIntent.instance.getInitialMedia().then(_handleSharedMedia);
+  }
+
+  void _handleSharedMedia(List<SharedMediaFile> value) {
+    if (value.isNotEmpty) {
+      final router = ref.read(routerProvider);
+      router.go('${AppRoutes.share}?url=${value.first.path}');
     }
   }
 
@@ -55,12 +66,44 @@ class _MyAppState extends ConsumerState<MyApp> {
     final router = ref.watch(routerProvider);
     final appSettings = ref.watch(settingsProvider);
 
+    final theme = _getThemeData(appSettings.themeMode);
+
     return MaterialApp.router(
       routerConfig: router,
       title: 'PebbleBoard',
-      theme: AppTheme.getLightTheme(appSettings.accentColor),
-      darkTheme: AppTheme.getDarkTheme(appSettings.accentColor),
-      themeMode: appSettings.themeMode,
+      theme: theme.light,
+      darkTheme: theme.dark,
+      themeMode: theme.mode,
+      debugShowCheckedModeBanner: false,
     );
+  }
+
+  ({ThemeData light, ThemeData dark, ThemeMode mode}) _getThemeData(AppThemeMode themeMode) {
+    switch (themeMode) {
+      case AppThemeMode.light:
+        return (
+          light: AppTheme.getLightTheme(),
+          dark: AppTheme.getDarkTheme(),
+          mode: ThemeMode.light
+        );
+      case AppThemeMode.dark:
+        return (
+          light: AppTheme.getLightTheme(),
+          dark: AppTheme.getDarkTheme(),
+          mode: ThemeMode.dark
+        );
+      case AppThemeMode.system:
+        return (
+          light: AppTheme.getLightTheme(),
+          dark: AppTheme.getDarkTheme(),
+          mode: ThemeMode.system
+        );
+      case AppThemeMode.oledDark:
+        return (
+          light: AppTheme.getLightTheme(),
+          dark: AppTheme.getOledDarkTheme(),
+          mode: ThemeMode.dark
+        );
+    }
   }
 }
