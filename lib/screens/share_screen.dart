@@ -107,18 +107,31 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
   Future<void> _fetchMetadata() async {
     if (widget.initialBookmark != null) return; // Only fetch if it's a new bookmark
 
+    setState(() {
+      _isLoadingMetadata = true;
+      _error = null;
+    });
+
     try {
-      final metadata = await MetadataFetch.extract(_sanitizedUrl);
-      _titleController.text = metadata?.title ?? '';
-      _descriptionController.text = metadata?.description ?? '';
-      _imageUrlController.text = metadata?.image ?? '';
+      final metadata = await MetadataFetch.extract(_sanitizedUrl).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Metadata fetch timed out'),
+      );
+      if (mounted) {
+        _titleController.text = metadata?.title ?? '';
+        _descriptionController.text = metadata?.description ?? '';
+        _imageUrlController.text = metadata?.image ?? '';
+      }
     } catch (e) {
-      print('Error fetching metadata: $e');
-      _error = 'Failed to fetch metadata: $e';
+      if (mounted) {
+        _error = 'Failed to fetch metadata: ${e.toString()}';
+      }
     } finally {
-      setState(() {
-        _isLoadingMetadata = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingMetadata = false;
+        });
+      }
     }
   }
 
@@ -175,7 +188,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
         // Insert new bookmark
         final newBookmark = BookmarksCompanion.insert(
           boardId: _selectedBoard!.id,
-          url: widget.sharedUrl,
+          url: _sanitizedUrl,
           domain: domain,
           title: Value(_titleController.text.isEmpty ? null : _titleController.text),
           description: Value(_descriptionController.text.isEmpty ? null : _descriptionController.text),

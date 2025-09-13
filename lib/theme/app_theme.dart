@@ -71,14 +71,14 @@ class AppTheme {
 
   static const double _borderRadius = 0.35 * 16; // 0.35rem converted to Flutter's default 16px base
 
-  static ThemeData getLightTheme() {
+  static ThemeData getLightTheme([Color? accentColor]) {
     return _createTheme(
       brightness: Brightness.light,
       background: _lightBackground,
       foreground: _lightForeground,
       card: _lightCard,
       cardForeground: _lightCardForeground,
-      primary: _lightPrimary,
+      primary: accentColor ?? _lightPrimary,
       primaryForeground: _lightPrimaryForeground,
       secondary: _lightSecondary,
       secondaryForeground: _lightSecondaryForeground,
@@ -90,18 +90,18 @@ class AppTheme {
       destructiveForeground: _lightDestructiveForeground,
       border: _lightBorder,
       input: _lightInput,
-      ring: _lightRing,
+      ring: accentColor ?? _lightRing,
     );
   }
 
-  static ThemeData getDarkTheme() {
+  static ThemeData getDarkTheme([Color? accentColor]) {
     return _createTheme(
       brightness: Brightness.dark,
       background: _darkBackground,
       foreground: _darkForeground,
       card: _darkCard,
       cardForeground: _darkCardForeground,
-      primary: _darkPrimary,
+      primary: accentColor ?? _darkPrimary,
       primaryForeground: _darkPrimaryForeground,
       secondary: _darkSecondary,
       secondaryForeground: _darkSecondaryForeground,
@@ -113,18 +113,18 @@ class AppTheme {
       destructiveForeground: _darkDestructiveForeground,
       border: _darkBorder,
       input: _darkInput,
-      ring: _darkRing,
+      ring: accentColor ?? _darkRing,
     );
   }
 
-  static ThemeData getOledDarkTheme() {
+  static ThemeData getOledDarkTheme([Color? accentColor]) {
     return _createTheme(
       brightness: Brightness.dark,
       background: _oledDarkBackground,
       foreground: _oledDarkForeground,
       card: _oledDarkCard,
       cardForeground: _oledDarkCardForeground,
-      primary: _oledDarkPrimary,
+      primary: accentColor ?? _oledDarkPrimary,
       primaryForeground: _oledDarkPrimaryForeground,
       secondary: _oledDarkSecondary,
       secondaryForeground: _oledDarkSecondaryForeground,
@@ -136,7 +136,7 @@ class AppTheme {
       destructiveForeground: _oledDarkDestructiveForeground,
       border: _oledDarkBorder,
       input: _oledDarkInput,
-      ring: _oledDarkRing,
+      ring: accentColor ?? _oledDarkRing,
     );
   }
 

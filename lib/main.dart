@@ -66,7 +66,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     final router = ref.watch(routerProvider);
     final appSettings = ref.watch(settingsProvider);
 
-    final theme = _getThemeData(appSettings.themeMode);
+    final theme = _getThemeData(appSettings.themeMode, appSettings.accentColor);
 
     return MaterialApp.router(
       routerConfig: router,
@@ -78,30 +78,30 @@ class _MyAppState extends ConsumerState<MyApp> {
     );
   }
 
-  ({ThemeData light, ThemeData dark, ThemeMode mode}) _getThemeData(AppThemeMode themeMode) {
+  ({ThemeData light, ThemeData dark, ThemeMode mode}) _getThemeData(AppThemeMode themeMode, Color accentColor) {
     switch (themeMode) {
       case AppThemeMode.light:
         return (
-          light: AppTheme.getLightTheme(),
-          dark: AppTheme.getDarkTheme(),
+          light: AppTheme.getLightTheme(accentColor),
+          dark: AppTheme.getDarkTheme(accentColor),
           mode: ThemeMode.light
         );
       case AppThemeMode.dark:
         return (
-          light: AppTheme.getLightTheme(),
-          dark: AppTheme.getDarkTheme(),
+          light: AppTheme.getLightTheme(accentColor),
+          dark: AppTheme.getDarkTheme(accentColor),
           mode: ThemeMode.dark
         );
       case AppThemeMode.system:
         return (
-          light: AppTheme.getLightTheme(),
-          dark: AppTheme.getDarkTheme(),
+          light: AppTheme.getLightTheme(accentColor),
+          dark: AppTheme.getDarkTheme(accentColor),
           mode: ThemeMode.system
         );
       case AppThemeMode.oledDark:
         return (
-          light: AppTheme.getLightTheme(),
-          dark: AppTheme.getOledDarkTheme(),
+          light: AppTheme.getLightTheme(accentColor),
+          dark: AppTheme.getOledDarkTheme(accentColor),
           mode: ThemeMode.dark
         );
     }

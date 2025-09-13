@@ -5,6 +5,8 @@ abstract class SettingsService {
   Future<bool> setString(String key, String value);
   Future<bool?> getBool(String key);
   Future<bool> setBool(String key, bool value);
+  Future<int?> getInt(String key);
+  Future<bool> setInt(String key, int value);
 }
 
 class SharedPreferencesService extends SettingsService {
@@ -30,5 +32,15 @@ class SharedPreferencesService extends SettingsService {
   @override
   Future<bool> setBool(String key, bool value) async {
     return _prefs.setBool(key, value);
+  }
+
+  @override
+  Future<int?> getInt(String key) async {
+    return _prefs.getInt(key);
+  }
+
+  @override
+  Future<bool> setInt(String key, int value) async {
+    return _prefs.setInt(key, value);
   }
 }

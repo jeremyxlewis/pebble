@@ -50,7 +50,7 @@ class Bookmarks extends Table {
 
 @DriftDatabase(tables: [Boards, Bookmarks], daos: [BoardsDao, BookmarksDao])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? openConnection());
 
   @override
   int get schemaVersion => 6; // Increment schema version

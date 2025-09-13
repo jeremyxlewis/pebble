@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart'; // New import
 import 'package:path/path.dart' as p; // New import
 import 'package:file_picker/file_picker.dart'; // New import
 import 'package:pebble_board/app_routes.dart'; // New import
-import 'package:pebble_board/utils/app_constants.dart'; // New import
+
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -109,42 +109,82 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   static Future<void> _exportDatabase(BuildContext context) async {
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Exporting database...'),
+            ],
+          ),
+        );
+      },
+    );
+
     try {
       final dbFolder = await getApplicationDocumentsDirectory();
       final dbFile = File(p.join(dbFolder.path, 'db.sqlite'));
 
       if (!await dbFile.exists()) {
-        if (!context.mounted) return; // Add this line
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // Close progress dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppConstants.databaseFileNotFoundMessage)),
+          const SnackBar(content: Text('Database file not found')),
         );
         return;
       }
 
       final result = await FilePicker.platform.saveFile(
-        dialogTitle: AppConstants.exportDatabaseDialogTitle,
+        dialogTitle: 'Export Database',
         fileName: 'pebble_board_backup.sqlite',
         type: FileType.custom,
         allowedExtensions: ['sqlite'],
       );
 
       if (result != null) {
-        final newFile = File(result); // Corrected: result is already the path string
+        final newFile = File(result);
         await dbFile.copy(newFile.path);
-        if (!context.mounted) return; // Add this check here
+        // TODO: Implement encryption for exported database file
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // Close progress dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Database exported to ${newFile.path}')),
+          SnackBar(content: Text('Database exported to ${p.basename(newFile.path)}')),
         );
+      } else {
+        Navigator.of(context).pop(); // Close progress dialog
       }
     } catch (e) {
-      if (!context.mounted) return; // Add this line
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close progress dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to export database: $e')),
+        SnackBar(content: Text('Failed to export database: ${e.toString()}')),
       );
     }
   }
 
   static Future<void> _importDatabase(BuildContext context) async {
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Importing database...'),
+            ],
+          ),
+        );
+      },
+    );
+
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -153,33 +193,51 @@ class SettingsScreen extends ConsumerWidget {
       );
 
       if (result != null && result.files.single.path != null) {
-        final selectedFile = File(result.files.single.path!); 
+        final selectedFile = File(result.files.single.path!);
+
+        // Basic validation: Check if file exists and has .sqlite extension
+        if (!await selectedFile.exists()) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selected file does not exist')),
+          );
+          return;
+        }
+
         final dbFolder = await getApplicationDocumentsDirectory();
         final dbFile = File(p.join(dbFolder.path, 'db.sqlite'));
 
+        // Create backup of current database
         if (await dbFile.exists()) {
-          await dbFile.delete(); // Delete existing database
+          final backupFile = File(p.join(dbFolder.path, 'db_backup.sqlite'));
+          await dbFile.copy(backupFile.path);
+        }
+
+        if (await dbFile.exists()) {
+          await dbFile.delete();
         }
 
         await selectedFile.copy(dbFile.path);
 
-        if (!context.mounted) return; // Add this line
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // Close progress dialog
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(AppConstants.databaseImportedRestartMessage),
+            content: Text('Database imported successfully. Please restart the app.'),
             duration: Duration(seconds: 5),
           ),
         );
       } else {
-        if (!context.mounted) return; // Add this line
+        Navigator.of(context).pop(); // Close progress dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppConstants.noFileSelectedMessage)),
+          const SnackBar(content: Text('No file selected')),
         );
       }
     } catch (e) {
-      if (!context.mounted) return; // Add this line
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close progress dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import database: $e')),
+        SnackBar(content: Text('Failed to import database: ${e.toString()}')),
       );
     }
   }

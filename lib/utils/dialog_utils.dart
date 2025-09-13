@@ -126,7 +126,7 @@ class _AddUrlDialogContentState extends State<_AddUrlDialogContent> {
       _metadata = null;
     });
     try {
-      final metadata = await MetadataFetch.extract(url);
+      final metadata = await MetadataFetch.extract(url).timeout(const Duration(seconds: 10));
       if (mounted) {
         setState(() {
           _metadata = metadata;
@@ -235,8 +235,10 @@ Future<Board?> showAddBoardDialog(BuildContext context, WidgetRef ref) async {
                   createdAt: DateTime.now(),
                 ));
                 final newBoard = await dao.getBoardById(newBoardId);
+                // ignore: use_build_context_synchronously
                 Navigator.of(dialogContext).pop(newBoard);
               } else {
+                // ignore: use_build_context_synchronously
                 Navigator.of(dialogContext).pop(null);
               }
             },

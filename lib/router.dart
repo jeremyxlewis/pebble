@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pebble_board/app_routes.dart';
@@ -17,17 +18,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.home,
         builder: (context, state) => const HomeScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.board,
-        builder: (context, state) {
-          final boardIdString = state.pathParameters['boardId'];
-          final boardId = int.tryParse(boardIdString ?? '');
-          if (boardId == null) {
-            return const HomeScreen();
-          }
-          return BoardScreen(boardId: boardId);
-        },
-      ),
+       GoRoute(
+         path: AppRoutes.board,
+         builder: (context, state) {
+           final boardIdString = state.pathParameters['boardId'];
+           final boardId = int.tryParse(boardIdString ?? '');
+           if (boardId == null) {
+             // Show error screen instead of falling back to HomeScreen
+             return Scaffold(
+               appBar: AppBar(title: const Text('Error')),
+               body: const Center(
+                 child: Text('Invalid board ID. Please check the URL.'),
+               ),
+             );
+           }
+           return BoardScreen(boardId: boardId);
+         },
+       ),
       GoRoute(
         path: AppRoutes.share,
         builder: (context, state) {

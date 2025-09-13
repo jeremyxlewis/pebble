@@ -27,40 +27,49 @@ class ThumbnailWidget extends StatelessWidget {
     final theme = Theme.of(context);
 
     if (thumbnailSource == ThumbnailSource.auto && thumbnailUrl != null) {
-      return CachedNetworkImage(
-        imageUrl: thumbnailUrl!,
-        fit: fit,
-        width: width,
-        height: height,
-        alignment: Alignment.center,
-        progressIndicatorBuilder: (context, url, downloadProgress) => Center(
-          child: CircularProgressIndicator(value: downloadProgress.progress),
-        ),
-        errorWidget: (context, url, error) => Icon(
-          Icons.image_not_supported_outlined,
-          color: theme.textTheme.bodySmall?.color,
-          size: 40,
+      return Semantics(
+        label: 'Thumbnail image from $thumbnailUrl',
+        child: CachedNetworkImage(
+          imageUrl: thumbnailUrl!,
+          fit: fit,
+          width: width,
+          height: height,
+          alignment: Alignment.center,
+          progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+            child: CircularProgressIndicator(value: downloadProgress.progress),
+          ),
+          errorWidget: (context, url, error) => Icon(
+            Icons.image_not_supported_outlined,
+            color: theme.textTheme.bodySmall?.color,
+            size: 40,
+          ),
         ),
       );
     } else if (thumbnailSource == ThumbnailSource.manual &&
         manualThumbnailPath != null) {
-      return Image.file(
-        File(manualThumbnailPath!),
-        fit: fit,
-        width: width,
-        height: height,
-        alignment: Alignment.center,
-        errorBuilder: (context, error, stackTrace) => Icon(
-          Icons.image_not_supported_outlined,
-          color: theme.textTheme.bodySmall?.color,
-          size: 40,
+      return Semantics(
+        label: 'Manual thumbnail image',
+        child: Image.file(
+          File(manualThumbnailPath!),
+          fit: fit,
+          width: width,
+          height: height,
+          alignment: Alignment.center,
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.image_not_supported_outlined,
+            color: theme.textTheme.bodySmall?.color,
+            size: 40,
+          ),
         ),
       );
     } else {
-      return Icon(
-        Icons.space_dashboard_outlined,
-        color: theme.textTheme.bodySmall?.color,
-        size: 40,
+      return Semantics(
+        label: 'No thumbnail available',
+        child: Icon(
+          Icons.space_dashboard_outlined,
+          color: theme.textTheme.bodySmall?.color,
+          size: 40,
+        ),
       );
     }
   }

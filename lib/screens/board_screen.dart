@@ -2,7 +2,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:metadata_fetch/metadata_fetch.dart';
+
 import 'package:pebble_board/database/database.dart';
 import 'package:pebble_board/providers/database_provider.dart';
 import 'package:pebble_board/providers/paginated_bookmarks_provider.dart';
@@ -35,7 +35,7 @@ class BoardScreen extends ConsumerStatefulWidget {
 class _BoardScreenState extends ConsumerState<BoardScreen> {
   final _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  bool _isSaving = false;
+
   bool _isSearching = false;
   bool _isMultiSelecting = false; // New state for multi-select mode
   final Set<int> _selectedBookmarkIds = {}; // New set to store selected bookmark IDs
@@ -152,11 +152,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
             },
             child: _buildContent(bookmarksState, boardView),
           ),
-          if (_isSaving)
-            Container(
-              color: Colors.black.withAlpha((0.5 * 255).round()),
-              child: const Center(child: CircularProgressIndicator()),
-            ),
+
         ],
       ),
       floatingActionButton: _isMultiSelecting ? null : FloatingActionButton(
@@ -189,9 +185,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               await dao.deleteBookmarksByIds(_selectedBookmarkIds.toList());
               ref.read(paginatedBookmarksProvider(widget.boardId).notifier).removeBookmarksByIds(_selectedBookmarkIds.toList());
               _exitMultiSelect();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${_selectedBookmarkIds.length} bookmarks deleted.')),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${_selectedBookmarkIds.length} bookmarks deleted.')),
+                );
+              }
             }
           },
         ),
@@ -236,9 +234,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               await dao.updateBookmarksBoardId(_selectedBookmarkIds.toList(), selectedBoard.id);
               ref.read(paginatedBookmarksProvider(widget.boardId).notifier).removeBookmarksByIds(_selectedBookmarkIds.toList());
               _exitMultiSelect();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${_selectedBookmarkIds.length} bookmarks moved to ${selectedBoard.name}.')),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${_selectedBookmarkIds.length} bookmarks moved to ${selectedBoard.name}.')),
+                );
+              }
             }
           },
         ),
@@ -461,51 +461,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   
 
-  void _saveBookmark(String url) async {
-    if (url.isEmpty) return;
 
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      final dao = ref.read(bookmarksDaoProvider);
-      final domain = Uri.parse(url).host;
-      final metadata = await MetadataFetch.extract(url);
-
-      final newBookmark = BookmarksCompanion.insert(
-        boardId: widget.boardId,
-        url: url,
-        domain: domain,
-        title: drift.Value(metadata?.title),
-        description: drift.Value(metadata?.description),
-        imageUrl: drift.Value(metadata?.image),
-        createdAt: DateTime.now(),
-      );
-
-      final id = await dao.insertBookmark(newBookmark);
-      final savedBookmark = await (dao.select(dao.bookmarks)..where((b) => b.id.equals(id))).getSingle();
-
-      if (mounted) {
-        ref.read(paginatedBookmarksProvider(widget.boardId).notifier).addBookmark(savedBookmark);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppConstants.bookmarkSavedMessage)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch metadata: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
-  }
 
   void _showBookmarkDetails(BuildContext context, Bookmark bookmark) {
     showModalBottomSheet(
