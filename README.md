@@ -44,8 +44,8 @@ PebbleBoard is a versatile Flutter application designed to help you organize and
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/kvotheprints/pebble.git
-    cd pebble_board
+    git clone https://github.com/jeremyxlewis/pebble.git
+    cd pebble
     ```
 2.  **Get dependencies:**
     ```bash
@@ -76,4 +76,4 @@ Contributions are welcome! Please feel free to open issues or submit pull reques
 
 ## License
 
-[Consider adding a license here, e.g., MIT, Apache 2.0, etc.]
+MIT License
