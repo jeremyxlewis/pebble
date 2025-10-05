@@ -63,35 +63,39 @@ class BoardThumbnailSettingsScreen extends ConsumerWidget {
           title: const Text(AppConstants.chooseThumbnailSourceDialogTitle),
           content: StatefulBuilder(
             builder: (context, setState) {
-              return RadioGroup<ThumbnailSource>(
-                groupValue: currentSource,
-                onChanged: (ThumbnailSource? value) async {
-                  if (value != null) {
-                    ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
-                    Navigator.of(dialogContext).pop();
-                     if (value == ThumbnailSource.manual) {
-                       final ImagePicker picker = ImagePicker();
-                       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                       if (image != null) {
-                         ref.read(boardsDaoProvider).updateBoardManualThumbnailPath(boardId, image.path);
-                       }
-                     }
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<ThumbnailSource>(
-                      title: const Text('Automatic (last saved bookmark)'),
-                      value: ThumbnailSource.auto,
-                    ),
-                    RadioListTile<ThumbnailSource>(
-                      title: const Text('Manual (choose from gallery)'),
-                      value: ThumbnailSource.manual,
-                    ),
-
-                  ],
-                ),
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<ThumbnailSource>(
+                    title: const Text('Automatic (last saved bookmark)'),
+                    value: ThumbnailSource.auto,
+                    groupValue: currentSource,
+                    onChanged: (ThumbnailSource? value) async {
+                      if (value != null) {
+                        ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
+                        Navigator.of(dialogContext).pop();
+                      }
+                    },
+                  ),
+                  RadioListTile<ThumbnailSource>(
+                    title: const Text('Manual (choose from gallery)'),
+                    value: ThumbnailSource.manual,
+                    groupValue: currentSource,
+                    onChanged: (ThumbnailSource? value) async {
+                      if (value != null) {
+                        ref.read(boardsDaoProvider).updateBoardThumbnailSource(boardId, value);
+                        Navigator.of(dialogContext).pop();
+                        if (value == ThumbnailSource.manual) {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            ref.read(boardsDaoProvider).updateBoardManualThumbnailPath(boardId, image.path);
+                          }
+                        }
+                      }
+                    },
+                  ),
+                ],
               );
             },
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pebble_board/providers/settings_provider.dart';
+import 'package:pebble_board/theme/app_theme.dart';
 
 import 'dart:io'; // New import
 import 'package:path_provider/path_provider.dart'; // New import
@@ -32,7 +33,10 @@ class SettingsScreen extends ConsumerWidget {
                 currentThemeMode: appSettings.themeMode,
                 onChanged: (mode) => settingsNotifier.setThemeMode(mode!),
               ),
-              
+              _AccentColorControl(
+                currentAccentColor: appSettings.accentColor,
+                onChanged: (color) => settingsNotifier.setAccentColor(color),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -270,6 +274,52 @@ class _ThemeModeControl extends StatelessWidget {
           ],
           selected: {currentThemeMode},
           onSelectionChanged: (newSelection) => onChanged(newSelection.first),
+        ),
+      ],
+    );
+  }
+}
+
+class _AccentColorControl extends StatelessWidget {
+  final Color currentAccentColor;
+  final ValueChanged<Color> onChanged;
+
+  const _AccentColorControl({required this.currentAccentColor, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+          child: Text(
+            'Accent Color',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: AppTheme.accentColors.map((color) {
+            final isSelected = color == currentAccentColor;
+            return GestureDetector(
+              onTap: () => onChanged(color),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                    width: 3,
+                  ),
+                ),
+                child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

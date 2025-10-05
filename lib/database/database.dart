@@ -44,6 +44,7 @@ class Bookmarks extends Table {
   TextColumn get title => text().nullable()();
   TextColumn get description => text().nullable()();
   TextColumn get imageUrl => text().nullable()();
+  TextColumn get manualThumbnailPath => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   IntColumn get position => integer().nullable()(); // Add this line
 }
@@ -73,6 +74,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 6) { // Add migration for new 'position' column in Boards
           await m.addColumn(boards, boards.position);
+        }
+        if (from < 7) {
+          await m.addColumn(bookmarks, bookmarks.manualThumbnailPath);
         }
       },
     );

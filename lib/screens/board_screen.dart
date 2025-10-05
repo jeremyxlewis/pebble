@@ -17,6 +17,12 @@ import 'package:pebble_board/utils/dialog_utils.dart';
 import 'package:pebble_board/app_routes.dart'; // New import
 import 'package:pebble_board/models/share_screen_extra.dart';
 import 'package:pebble_board/utils/app_constants.dart'; // New import
+import 'package:metadata_fetch/metadata_fetch.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:pebble_board/widgets/bookmark_details_sheet.dart';
 
 final boardProvider = FutureProvider.family<Board?, int>((ref, boardId) {
   final dao = ref.watch(boardsDaoProvider);
@@ -39,6 +45,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   bool _isSearching = false;
   bool _isMultiSelecting = false; // New state for multi-select mode
   final Set<int> _selectedBookmarkIds = {}; // New set to store selected bookmark IDs
+  BookmarkSortOrder _sortOrder = BookmarkSortOrder.createdAtDesc;
 
   @override
   void initState() {
@@ -84,6 +91,40 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     });
   }
 
+  Future<void> _showSortDialog() async {
+    final selectedOrder = await showDialog<BookmarkSortOrder>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Sort by'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookmarkSortOrder.createdAtDesc),
+            child: const Text('Date Added (Newest)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookmarkSortOrder.createdAtAsc),
+            child: const Text('Date Added (Oldest)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookmarkSortOrder.titleAsc),
+            child: const Text('Title (A-Z)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, BookmarkSortOrder.titleDesc),
+            child: const Text('Title (Z-A)'),
+          ),
+        ],
+      ),
+    );
+
+    if (selectedOrder != null) {
+      setState(() {
+        _sortOrder = selectedOrder;
+      });
+      ref.read(paginatedBookmarksProvider(widget.boardId).notifier).setSortOrder(selectedOrder);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookmarksState = ref.watch(paginatedBookmarksProvider(widget.boardId));
@@ -95,25 +136,26 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           ? _buildMultiSelectAppBar() // New: Multi-select app bar
           : AppBar(
               title: _isSearching
-                  ? TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search bookmarks...',
-                        border: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white54),
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
-                        hintStyle: TextStyle(color: Colors.white70),
-                        contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                      autofocus: true,
-                    )
+                   ? TextField(
+                       controller: _searchController,
+                       onChanged: (value) => ref.read(paginatedBookmarksProvider(widget.boardId).notifier).setSearchQuery(value),
+                       decoration: const InputDecoration(
+                         hintText: 'Search bookmarks...',
+                         border: UnderlineInputBorder(
+                           borderSide: BorderSide(color: Colors.white),
+                         ),
+                         enabledBorder: UnderlineInputBorder(
+                           borderSide: BorderSide(color: Colors.white54),
+                         ),
+                         focusedBorder: UnderlineInputBorder(
+                           borderSide: BorderSide(color: Colors.white),
+                         ),
+                         hintStyle: TextStyle(color: Colors.white70),
+                         contentPadding: EdgeInsets.symmetric(vertical: 8.0),
+                       ),
+                       style: const TextStyle(color: Colors.white),
+                       autofocus: true,
+                     )
                   : boardAsyncValue.when(
                       data: (board) => Text(board?.name ?? 'Board'),
                       loading: () => const SizedBox.shrink(),
@@ -121,15 +163,16 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                     ),
               actions: [
                 _isSearching
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _isSearching = false;
-                          });
-                        },
-                      )
+                     ? IconButton(
+                         icon: const Icon(Icons.clear),
+                         onPressed: () {
+                           _searchController.clear();
+                           ref.read(paginatedBookmarksProvider(widget.boardId).notifier).setSearchQuery('');
+                           setState(() {
+                             _isSearching = false;
+                           });
+                         },
+                       )
                     : IconButton(
                         icon: const Icon(Icons.search),
                         onPressed: () {
@@ -139,9 +182,17 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                         },
                       ),
                 IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () => context.push(AppRoutes.settings),
+                  icon: const Icon(Icons.sort),
+                  onPressed: _showSortDialog,
                 ),
+                 IconButton(
+                   icon: const Icon(Icons.select_all),
+                   onPressed: () => setState(() => _isMultiSelecting = true),
+                 ),
+                 IconButton(
+                   icon: const Icon(Icons.settings_outlined),
+                   onPressed: () => context.push(AppRoutes.settings),
+                 ),
               ],
             ),
       body: Stack(
@@ -252,7 +303,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     }
 
     if (bookmarksState.bookmarks.isEmpty && !bookmarksState.isLoading) {
-      return const _EmptyState();
+      return _EmptyState(onAddBookmarkPressed: () => _showAddUrlDialog(context));
     }
 
     if (bookmarksState.error != null) {
@@ -479,14 +530,15 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               initialChildSize: 0.8,
               maxChildSize: 0.95,
               builder: (context, scrollController) {
-                return _BookmarkDetailsSheet(
-                  bookmark: bookmark,
-                  scrollController: scrollController,
-                  onDelete: () {
-                    Navigator.of(context).pop();
-                    _deleteBookmark(bookmark);
-                  },
-                );
+                 return BookmarkDetailsSheet(
+                   bookmark: bookmark,
+                   boardId: widget.boardId,
+                   scrollController: scrollController,
+                   onDelete: () {
+                     Navigator.of(context).pop();
+                     _deleteBookmark(bookmark);
+                   },
+                 );
               },
             ),
           ),
@@ -524,7 +576,7 @@ class _GridItem extends StatelessWidget {
         onLongPress: onLongPress,
         child: Stack(
           children: [
-            _CardImage(imageUrl: bookmark.imageUrl),
+            _CardImage(imageUrl: bookmark.imageUrl, manualThumbnailPath: bookmark.manualThumbnailPath),
             if (isMultiSelecting)
               Positioned(
                 top: 8,
@@ -566,7 +618,7 @@ class _ListItem extends StatelessWidget {
         leading: SizedBox(
           width: 60,
           height: 60,
-          child: _CardImage(imageUrl: bookmark.imageUrl),
+          child: _CardImage(imageUrl: bookmark.imageUrl, manualThumbnailPath: bookmark.manualThumbnailPath),
         ),
         title: Text(bookmark.title ?? bookmark.domain, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(bookmark.domain, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -583,7 +635,8 @@ class _ListItem extends StatelessWidget {
 
 class _CardImage extends StatelessWidget {
   final String? imageUrl;
-  const _CardImage({this.imageUrl});
+  final String? manualThumbnailPath;
+  const _CardImage({this.imageUrl, this.manualThumbnailPath});
 
   @override
   Widget build(BuildContext context) {
@@ -592,20 +645,26 @@ class _CardImage extends StatelessWidget {
       aspectRatio: 1.0, // Enforce square aspect ratio
       child: Container(
         color: theme.scaffoldBackgroundColor,
-        child: imageUrl != null
-            ? Image.network(
-                imageUrl!,
-                fit: BoxFit.cover, // Ensures cropping and centering
-                alignment: Alignment.center, // Explicitly center the image
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.link,
-                  color: theme.textTheme.bodySmall?.color,
-                ),
+        child: manualThumbnailPath != null
+            ? Image.file(
+                File(manualThumbnailPath!),
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               )
-            : Icon(
-                Icons.link,
-                color: theme.textTheme.bodySmall?.color,
-              ),
+            : imageUrl != null
+                ? Image.network(
+                    imageUrl!,
+                    fit: BoxFit.cover, // Ensures cropping and centering
+                    alignment: Alignment.center, // Explicitly center the image
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.link,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  )
+                : Icon(
+                    Icons.link,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
       ),
     );
   }
@@ -629,12 +688,14 @@ class _BookmarkDetailsSheet extends ConsumerStatefulWidget {
 class _BookmarkDetailsSheetState extends ConsumerState<_BookmarkDetailsSheet> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  String? _manualThumbnailPath;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.bookmark.title);
     _descriptionController = TextEditingController(text: widget.bookmark.description);
+    _manualThumbnailPath = widget.bookmark.manualThumbnailPath;
   }
 
   @override
@@ -643,6 +704,22 @@ class _BookmarkDetailsSheetState extends ConsumerState<_BookmarkDetailsSheet> {
     _descriptionController.dispose();
     super.dispose();
   }
+
+  Future<void> _changeThumbnail() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = p.basename(pickedFile.path);
+      final savedImage = await File(pickedFile.path).copy('${appDir.path}/$fileName');
+      setState(() {
+        _manualThumbnailPath = savedImage.path;
+      });
+    }
+  }
+
+
 
   Future<void> _saveChanges() async {
     final dao = ref.read(bookmarksDaoProvider);
@@ -653,12 +730,14 @@ class _BookmarkDetailsSheetState extends ConsumerState<_BookmarkDetailsSheet> {
       id: drift.Value(widget.bookmark.id),
       title: drift.Value(titleText),
       description: drift.Value(descriptionText),
+      manualThumbnailPath: drift.Value(_manualThumbnailPath),
     );
     await dao.updateBookmark(updatedBookmarkCompanion);
     // Update the provider's state with the new Bookmark object (not companion)
     final updatedBookmark = widget.bookmark.copyWith(
       title: drift.Value(titleText),
       description: drift.Value(descriptionText),
+      manualThumbnailPath: drift.Value(_manualThumbnailPath),
     );
     ref.read(paginatedBookmarksProvider(widget.bookmark.boardId).notifier).updateBookmark(updatedBookmark);
     if (mounted) {
@@ -675,7 +754,28 @@ class _BookmarkDetailsSheetState extends ConsumerState<_BookmarkDetailsSheet> {
       controller: widget.scrollController,
       padding: const EdgeInsets.all(24.0),
       children: [
-        if (widget.bookmark.imageUrl != null)
+        if (_manualThumbnailPath != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(_manualThumbnailPath!),
+                height: 200,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: theme.scaffoldBackgroundColor,
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 80,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+              ),
+            ),
+          )
+        else if (widget.bookmark.imageUrl != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: ClipRRect(
@@ -733,6 +833,11 @@ class _BookmarkDetailsSheetState extends ConsumerState<_BookmarkDetailsSheet> {
               onPressed: _saveChanges,
             ),
             ActionChip(
+              avatar: const Icon(Icons.image),
+              label: const Text('Change Thumbnail'),
+              onPressed: _changeThumbnail,
+            ),
+            ActionChip(
               avatar: const Icon(Icons.open_in_browser),
               label: const Text('Open'),
               onPressed: () async {
@@ -769,7 +874,9 @@ class _BookmarkDetailsSheetState extends ConsumerState<_BookmarkDetailsSheet> {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  final VoidCallback onAddBookmarkPressed;
+
+  const _EmptyState({required this.onAddBookmarkPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -790,10 +897,17 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the + button to add a bookmark.',
+            'Add your first bookmark to this board.',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.textTheme.bodySmall?.color,
             ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('Add a Bookmark'),
+            onPressed: onAddBookmarkPressed,
           ),
         ],
       ),

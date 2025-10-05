@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pebble_board/database/database.dart';
 import 'package:pebble_board/providers/database_provider.dart';
 
+import 'package:pebble_board/database/database.dart';
+
 const int kPageSize = 20;
 
 final paginatedBookmarksProvider = StateNotifierProvider.family<
@@ -14,6 +16,7 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
   final int _boardId;
   int _offset = 0;
   String _searchQuery = ''; // New
+  BookmarkSortOrder _sortOrder = BookmarkSortOrder.createdAtDesc;
 
   PaginatedBookmarksNotifier(this._bookmarksDao, this._boardId)
       : super(PaginatedBookmarksState.initial()) {
@@ -25,6 +28,12 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
     if (_searchQuery == query) return;
     _searchQuery = query;
     fetchFirstPage(); // Re-fetch from start with new query
+  }
+
+  void setSortOrder(BookmarkSortOrder order) {
+    if (_sortOrder == order) return;
+    _sortOrder = order;
+    fetchFirstPage(); // Re-fetch from start with new sort order
   }
 
   Future<void> fetchFirstPage() async {
@@ -52,6 +61,7 @@ class PaginatedBookmarksNotifier extends StateNotifier<PaginatedBookmarksState> 
         limit: kPageSize,
         offset: _offset,
         searchQuery: _searchQuery, // Pass search query
+        sortBy: _sortOrder,
       );
 
       final hasMore = newBookmarks.length == kPageSize;

@@ -12,11 +12,26 @@ import 'package:pebble_board/utils/app_constants.dart';
 import 'package:pebble_board/utils/dialog_utils.dart';
 import 'package:pebble_board/widgets/thumbnail_widget.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _showSearch = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final boardsAsyncValue = ref.watch(boardsWithThumbnailsProvider);
     final appSettings = ref.watch(settingsProvider);
 
@@ -25,6 +40,10 @@ class HomeScreen extends ConsumerWidget {
         title: const Text(AppConstants.appTitle),
         actions: [
           IconButton(
+            icon: const Icon(_showSearch ? Icons.search_off : Icons.search),
+            onPressed: () => setState(() => _showSearch = !_showSearch),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push(AppRoutes.settings),
           ),
@@ -32,13 +51,66 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: boardsAsyncValue.when(
         data: (boards) {
-          if (boards.isEmpty) {
-            return const _EmptyState();
+          final filteredBoards = boards.where((b) => b.board.name.toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+          if (filteredBoards.isEmpty) {
+            if (boards.isEmpty) {
+              return const _EmptyState();
+            } else {
+              return Column(
+                children: [
+                  if (_showSearch)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) => setState(() {}),
+                        decoration: const InputDecoration(
+                          hintText: 'Search boards...',
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                      ),
+                    ),
+                  const Expanded(child: Center(child: Text('No boards match your search.'))),
+                ],
+              );
+            }
           }
           if (appSettings.boardView == BoardView.grid) {
-            return _GridView(boards: boards);
+            return Column(
+              children: [
+                if (_showSearch)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Search boards...',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
+                  ),
+                Expanded(child: _GridView(boards: filteredBoards)),
+              ],
+            );
           } else {
-            return _ListView(boards: boards);
+            return Column(
+              children: [
+                if (_showSearch)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Search boards...',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
+                  ),
+                Expanded(child: _ListView(boards: filteredBoards)),
+              ],
+            );
           }
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -252,11 +324,11 @@ class _BoardListTile extends ConsumerWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   const _EmptyState();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Center(
       child: Column(
@@ -274,10 +346,22 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the + button to create your first board.',
+            'Create your first board to organize your links.',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.textTheme.bodySmall?.color,
             ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('Create a Board'),
+            onPressed: () async {
+              final newBoard = await showAddBoardDialog(context, ref);
+              if (newBoard != null) {
+                ref.invalidate(boardsWithThumbnailsProvider);
+              }
+            },
           ),
         ],
       ),

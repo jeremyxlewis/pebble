@@ -11,87 +11,55 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
   late final GeneratedColumnWithTypeConverter<ThumbnailSource, int>
-  thumbnailSource = GeneratedColumn<int>(
-    'thumbnail_source',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  ).withConverter<ThumbnailSource>($BoardsTable.$converterthumbnailSource);
+      thumbnailSource = GeneratedColumn<int>(
+              'thumbnail_source', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<ThumbnailSource>(
+              $BoardsTable.$converterthumbnailSource);
   static const VerificationMeta _manualThumbnailPathMeta =
       const VerificationMeta('manualThumbnailPath');
   @override
   late final GeneratedColumn<String> manualThumbnailPath =
-      GeneratedColumn<String>(
-        'manual_thumbnail_path',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
-  static const VerificationMeta _positionMeta = const VerificationMeta(
-    'position',
-  );
+      GeneratedColumn<String>('manual_thumbnail_path', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _positionMeta =
+      const VerificationMeta('position');
   @override
   late final GeneratedColumn<int> position = GeneratedColumn<int>(
-    'position',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
+      'position', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    createdAt,
-    thumbnailSource,
-    manualThumbnailPath,
-    position,
-  ];
+  List<GeneratedColumn> get $columns =>
+      [id, name, createdAt, thumbnailSource, manualThumbnailPath, position];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'boards';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Board> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Board> instance,
+      {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -99,34 +67,25 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
     }
     if (data.containsKey('name')) {
       context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('manual_thumbnail_path')) {
       context.handle(
-        _manualThumbnailPathMeta,
-        manualThumbnailPath.isAcceptableOrUnknown(
-          data['manual_thumbnail_path']!,
           _manualThumbnailPathMeta,
-        ),
-      );
+          manualThumbnailPath.isAcceptableOrUnknown(
+              data['manual_thumbnail_path']!, _manualThumbnailPathMeta));
     }
     if (data.containsKey('position')) {
-      context.handle(
-        _positionMeta,
-        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
-      );
+      context.handle(_positionMeta,
+          position.isAcceptableOrUnknown(data['position']!, _positionMeta));
     }
     return context;
   }
@@ -137,32 +96,19 @@ class $BoardsTable extends Boards with TableInfo<$BoardsTable, Board> {
   Board map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Board(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       thumbnailSource: $BoardsTable.$converterthumbnailSource.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
-          data['${effectivePrefix}thumbnail_source'],
-        )!,
-      ),
+          attachedDatabase.typeMapping.read(
+              DriftSqlType.int, data['${effectivePrefix}thumbnail_source'])!),
       manualThumbnailPath: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}manual_thumbnail_path'],
-      ),
-      position: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}position'],
-      ),
+          DriftSqlType.string, data['${effectivePrefix}manual_thumbnail_path']),
+      position: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}position']),
     );
   }
 
@@ -182,14 +128,13 @@ class Board extends DataClass implements Insertable<Board> {
   final ThumbnailSource thumbnailSource;
   final String? manualThumbnailPath;
   final int? position;
-  const Board({
-    required this.id,
-    required this.name,
-    required this.createdAt,
-    required this.thumbnailSource,
-    this.manualThumbnailPath,
-    this.position,
-  });
+  const Board(
+      {required this.id,
+      required this.name,
+      required this.createdAt,
+      required this.thumbnailSource,
+      this.manualThumbnailPath,
+      this.position});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -198,8 +143,7 @@ class Board extends DataClass implements Insertable<Board> {
     map['created_at'] = Variable<DateTime>(createdAt);
     {
       map['thumbnail_source'] = Variable<int>(
-        $BoardsTable.$converterthumbnailSource.toSql(thumbnailSource),
-      );
+          $BoardsTable.$converterthumbnailSource.toSql(thumbnailSource));
     }
     if (!nullToAbsent || manualThumbnailPath != null) {
       map['manual_thumbnail_path'] = Variable<String>(manualThumbnailPath);
@@ -225,21 +169,17 @@ class Board extends DataClass implements Insertable<Board> {
     );
   }
 
-  factory Board.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Board.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Board(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      thumbnailSource: serializer.fromJson<ThumbnailSource>(
-        json['thumbnailSource'],
-      ),
-      manualThumbnailPath: serializer.fromJson<String?>(
-        json['manualThumbnailPath'],
-      ),
+      thumbnailSource:
+          serializer.fromJson<ThumbnailSource>(json['thumbnailSource']),
+      manualThumbnailPath:
+          serializer.fromJson<String?>(json['manualThumbnailPath']),
       position: serializer.fromJson<int?>(json['position']),
     );
   }
@@ -256,23 +196,23 @@ class Board extends DataClass implements Insertable<Board> {
     };
   }
 
-  Board copyWith({
-    int? id,
-    String? name,
-    DateTime? createdAt,
-    ThumbnailSource? thumbnailSource,
-    Value<String?> manualThumbnailPath = const Value.absent(),
-    Value<int?> position = const Value.absent(),
-  }) => Board(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    createdAt: createdAt ?? this.createdAt,
-    thumbnailSource: thumbnailSource ?? this.thumbnailSource,
-    manualThumbnailPath: manualThumbnailPath.present
-        ? manualThumbnailPath.value
-        : this.manualThumbnailPath,
-    position: position.present ? position.value : this.position,
-  );
+  Board copyWith(
+          {int? id,
+          String? name,
+          DateTime? createdAt,
+          ThumbnailSource? thumbnailSource,
+          Value<String?> manualThumbnailPath = const Value.absent(),
+          Value<int?> position = const Value.absent()}) =>
+      Board(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+        thumbnailSource: thumbnailSource ?? this.thumbnailSource,
+        manualThumbnailPath: manualThumbnailPath.present
+            ? manualThumbnailPath.value
+            : this.manualThumbnailPath,
+        position: position.present ? position.value : this.position,
+      );
   Board copyWithCompanion(BoardsCompanion data) {
     return Board(
       id: data.id.present ? data.id.value : this.id,
@@ -303,13 +243,7 @@ class Board extends DataClass implements Insertable<Board> {
 
   @override
   int get hashCode => Object.hash(
-    id,
-    name,
-    createdAt,
-    thumbnailSource,
-    manualThumbnailPath,
-    position,
-  );
+      id, name, createdAt, thumbnailSource, manualThumbnailPath, position);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -344,8 +278,8 @@ class BoardsCompanion extends UpdateCompanion<Board> {
     this.thumbnailSource = const Value.absent(),
     this.manualThumbnailPath = const Value.absent(),
     this.position = const Value.absent(),
-  }) : name = Value(name),
-       createdAt = Value(createdAt);
+  })  : name = Value(name),
+        createdAt = Value(createdAt);
   static Insertable<Board> custom({
     Expression<int>? id,
     Expression<String>? name,
@@ -365,14 +299,13 @@ class BoardsCompanion extends UpdateCompanion<Board> {
     });
   }
 
-  BoardsCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<DateTime>? createdAt,
-    Value<ThumbnailSource>? thumbnailSource,
-    Value<String?>? manualThumbnailPath,
-    Value<int?>? position,
-  }) {
+  BoardsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<DateTime>? createdAt,
+      Value<ThumbnailSource>? thumbnailSource,
+      Value<String?>? manualThumbnailPath,
+      Value<int?>? position}) {
     return BoardsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -397,13 +330,11 @@ class BoardsCompanion extends UpdateCompanion<Board> {
     }
     if (thumbnailSource.present) {
       map['thumbnail_source'] = Variable<int>(
-        $BoardsTable.$converterthumbnailSource.toSql(thumbnailSource.value),
-      );
+          $BoardsTable.$converterthumbnailSource.toSql(thumbnailSource.value));
     }
     if (manualThumbnailPath.present) {
-      map['manual_thumbnail_path'] = Variable<String>(
-        manualThumbnailPath.value,
-      );
+      map['manual_thumbnail_path'] =
+          Variable<String>(manualThumbnailPath.value);
     }
     if (position.present) {
       map['position'] = Variable<int>(position.value);
@@ -434,184 +365,138 @@ class $BookmarksTable extends Bookmarks
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _boardIdMeta = const VerificationMeta(
-    'boardId',
-  );
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _boardIdMeta =
+      const VerificationMeta('boardId');
   @override
   late final GeneratedColumn<int> boardId = GeneratedColumn<int>(
-    'board_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL REFERENCES boards(id) ON DELETE CASCADE',
-  );
+      'board_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      $customConstraints: 'NOT NULL REFERENCES boards(id) ON DELETE CASCADE');
   static const VerificationMeta _urlMeta = const VerificationMeta('url');
   @override
   late final GeneratedColumn<String> url = GeneratedColumn<String>(
-    'url',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+      'url', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _domainMeta = const VerificationMeta('domain');
   @override
   late final GeneratedColumn<String> domain = GeneratedColumn<String>(
-    'domain',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+      'domain', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
+      'title', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
   @override
   late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _imageUrlMeta = const VerificationMeta(
-    'imageUrl',
-  );
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _imageUrlMeta =
+      const VerificationMeta('imageUrl');
   @override
   late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
-    'image_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
+      'image_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _manualThumbnailPathMeta =
+      const VerificationMeta('manualThumbnailPath');
+  @override
+  late final GeneratedColumn<String> manualThumbnailPath =
+      GeneratedColumn<String>('manual_thumbnail_path', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _positionMeta = const VerificationMeta(
-    'position',
-  );
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _positionMeta =
+      const VerificationMeta('position');
   @override
   late final GeneratedColumn<int> position = GeneratedColumn<int>(
-    'position',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
+      'position', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
-    id,
-    boardId,
-    url,
-    domain,
-    title,
-    description,
-    imageUrl,
-    createdAt,
-    position,
-  ];
+        id,
+        boardId,
+        url,
+        domain,
+        title,
+        description,
+        imageUrl,
+        manualThumbnailPath,
+        createdAt,
+        position
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'bookmarks';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Bookmark> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Bookmark> instance,
+      {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('board_id')) {
-      context.handle(
-        _boardIdMeta,
-        boardId.isAcceptableOrUnknown(data['board_id']!, _boardIdMeta),
-      );
+      context.handle(_boardIdMeta,
+          boardId.isAcceptableOrUnknown(data['board_id']!, _boardIdMeta));
     } else if (isInserting) {
       context.missing(_boardIdMeta);
     }
     if (data.containsKey('url')) {
       context.handle(
-        _urlMeta,
-        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
-      );
+          _urlMeta, url.isAcceptableOrUnknown(data['url']!, _urlMeta));
     } else if (isInserting) {
       context.missing(_urlMeta);
     }
     if (data.containsKey('domain')) {
-      context.handle(
-        _domainMeta,
-        domain.isAcceptableOrUnknown(data['domain']!, _domainMeta),
-      );
+      context.handle(_domainMeta,
+          domain.isAcceptableOrUnknown(data['domain']!, _domainMeta));
     } else if (isInserting) {
       context.missing(_domainMeta);
     }
     if (data.containsKey('title')) {
       context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
     }
     if (data.containsKey('description')) {
       context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
           _descriptionMeta,
-        ),
-      );
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
     }
     if (data.containsKey('image_url')) {
+      context.handle(_imageUrlMeta,
+          imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta));
+    }
+    if (data.containsKey('manual_thumbnail_path')) {
       context.handle(
-        _imageUrlMeta,
-        imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
-      );
+          _manualThumbnailPathMeta,
+          manualThumbnailPath.isAcceptableOrUnknown(
+              data['manual_thumbnail_path']!, _manualThumbnailPathMeta));
     }
     if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('position')) {
-      context.handle(
-        _positionMeta,
-        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
-      );
+      context.handle(_positionMeta,
+          position.isAcceptableOrUnknown(data['position']!, _positionMeta));
     }
     return context;
   }
@@ -622,42 +507,26 @@ class $BookmarksTable extends Bookmarks
   Bookmark map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Bookmark(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      boardId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}board_id'],
-      )!,
-      url: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}url'],
-      )!,
-      domain: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}domain'],
-      )!,
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      ),
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      ),
-      imageUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}image_url'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      position: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}position'],
-      ),
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      boardId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}board_id'])!,
+      url: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}url'])!,
+      domain: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}domain'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title']),
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      imageUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_url']),
+      manualThumbnailPath: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}manual_thumbnail_path']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      position: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}position']),
     );
   }
 
@@ -675,19 +544,20 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
   final String? title;
   final String? description;
   final String? imageUrl;
+  final String? manualThumbnailPath;
   final DateTime createdAt;
   final int? position;
-  const Bookmark({
-    required this.id,
-    required this.boardId,
-    required this.url,
-    required this.domain,
-    this.title,
-    this.description,
-    this.imageUrl,
-    required this.createdAt,
-    this.position,
-  });
+  const Bookmark(
+      {required this.id,
+      required this.boardId,
+      required this.url,
+      required this.domain,
+      this.title,
+      this.description,
+      this.imageUrl,
+      this.manualThumbnailPath,
+      required this.createdAt,
+      this.position});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -704,6 +574,9 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
     if (!nullToAbsent || imageUrl != null) {
       map['image_url'] = Variable<String>(imageUrl);
     }
+    if (!nullToAbsent || manualThumbnailPath != null) {
+      map['manual_thumbnail_path'] = Variable<String>(manualThumbnailPath);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || position != null) {
       map['position'] = Variable<int>(position);
@@ -717,15 +590,17 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       boardId: Value(boardId),
       url: Value(url),
       domain: Value(domain),
-      title: title == null && nullToAbsent
-          ? const Value.absent()
-          : Value(title),
+      title:
+          title == null && nullToAbsent ? const Value.absent() : Value(title),
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
       imageUrl: imageUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(imageUrl),
+      manualThumbnailPath: manualThumbnailPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(manualThumbnailPath),
       createdAt: Value(createdAt),
       position: position == null && nullToAbsent
           ? const Value.absent()
@@ -733,10 +608,8 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
     );
   }
 
-  factory Bookmark.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Bookmark.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Bookmark(
       id: serializer.fromJson<int>(json['id']),
@@ -746,6 +619,8 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       title: serializer.fromJson<String?>(json['title']),
       description: serializer.fromJson<String?>(json['description']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      manualThumbnailPath:
+          serializer.fromJson<String?>(json['manualThumbnailPath']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       position: serializer.fromJson<int?>(json['position']),
     );
@@ -761,32 +636,37 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       'title': serializer.toJson<String?>(title),
       'description': serializer.toJson<String?>(description),
       'imageUrl': serializer.toJson<String?>(imageUrl),
+      'manualThumbnailPath': serializer.toJson<String?>(manualThumbnailPath),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'position': serializer.toJson<int?>(position),
     };
   }
 
-  Bookmark copyWith({
-    int? id,
-    int? boardId,
-    String? url,
-    String? domain,
-    Value<String?> title = const Value.absent(),
-    Value<String?> description = const Value.absent(),
-    Value<String?> imageUrl = const Value.absent(),
-    DateTime? createdAt,
-    Value<int?> position = const Value.absent(),
-  }) => Bookmark(
-    id: id ?? this.id,
-    boardId: boardId ?? this.boardId,
-    url: url ?? this.url,
-    domain: domain ?? this.domain,
-    title: title.present ? title.value : this.title,
-    description: description.present ? description.value : this.description,
-    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
-    createdAt: createdAt ?? this.createdAt,
-    position: position.present ? position.value : this.position,
-  );
+  Bookmark copyWith(
+          {int? id,
+          int? boardId,
+          String? url,
+          String? domain,
+          Value<String?> title = const Value.absent(),
+          Value<String?> description = const Value.absent(),
+          Value<String?> imageUrl = const Value.absent(),
+          Value<String?> manualThumbnailPath = const Value.absent(),
+          DateTime? createdAt,
+          Value<int?> position = const Value.absent()}) =>
+      Bookmark(
+        id: id ?? this.id,
+        boardId: boardId ?? this.boardId,
+        url: url ?? this.url,
+        domain: domain ?? this.domain,
+        title: title.present ? title.value : this.title,
+        description: description.present ? description.value : this.description,
+        imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+        manualThumbnailPath: manualThumbnailPath.present
+            ? manualThumbnailPath.value
+            : this.manualThumbnailPath,
+        createdAt: createdAt ?? this.createdAt,
+        position: position.present ? position.value : this.position,
+      );
   Bookmark copyWithCompanion(BookmarksCompanion data) {
     return Bookmark(
       id: data.id.present ? data.id.value : this.id,
@@ -794,10 +674,12 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
       url: data.url.present ? data.url.value : this.url,
       domain: data.domain.present ? data.domain.value : this.domain,
       title: data.title.present ? data.title.value : this.title,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
+      description:
+          data.description.present ? data.description.value : this.description,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      manualThumbnailPath: data.manualThumbnailPath.present
+          ? data.manualThumbnailPath.value
+          : this.manualThumbnailPath,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       position: data.position.present ? data.position.value : this.position,
     );
@@ -813,6 +695,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('imageUrl: $imageUrl, ')
+          ..write('manualThumbnailPath: $manualThumbnailPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('position: $position')
           ..write(')'))
@@ -820,17 +703,8 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
   }
 
   @override
-  int get hashCode => Object.hash(
-    id,
-    boardId,
-    url,
-    domain,
-    title,
-    description,
-    imageUrl,
-    createdAt,
-    position,
-  );
+  int get hashCode => Object.hash(id, boardId, url, domain, title, description,
+      imageUrl, manualThumbnailPath, createdAt, position);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -842,6 +716,7 @@ class Bookmark extends DataClass implements Insertable<Bookmark> {
           other.title == this.title &&
           other.description == this.description &&
           other.imageUrl == this.imageUrl &&
+          other.manualThumbnailPath == this.manualThumbnailPath &&
           other.createdAt == this.createdAt &&
           other.position == this.position);
 }
@@ -854,6 +729,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
   final Value<String?> title;
   final Value<String?> description;
   final Value<String?> imageUrl;
+  final Value<String?> manualThumbnailPath;
   final Value<DateTime> createdAt;
   final Value<int?> position;
   const BookmarksCompanion({
@@ -864,6 +740,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     this.title = const Value.absent(),
     this.description = const Value.absent(),
     this.imageUrl = const Value.absent(),
+    this.manualThumbnailPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.position = const Value.absent(),
   });
@@ -875,12 +752,13 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     this.title = const Value.absent(),
     this.description = const Value.absent(),
     this.imageUrl = const Value.absent(),
+    this.manualThumbnailPath = const Value.absent(),
     required DateTime createdAt,
     this.position = const Value.absent(),
-  }) : boardId = Value(boardId),
-       url = Value(url),
-       domain = Value(domain),
-       createdAt = Value(createdAt);
+  })  : boardId = Value(boardId),
+        url = Value(url),
+        domain = Value(domain),
+        createdAt = Value(createdAt);
   static Insertable<Bookmark> custom({
     Expression<int>? id,
     Expression<int>? boardId,
@@ -889,6 +767,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     Expression<String>? title,
     Expression<String>? description,
     Expression<String>? imageUrl,
+    Expression<String>? manualThumbnailPath,
     Expression<DateTime>? createdAt,
     Expression<int>? position,
   }) {
@@ -900,22 +779,24 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (imageUrl != null) 'image_url': imageUrl,
+      if (manualThumbnailPath != null)
+        'manual_thumbnail_path': manualThumbnailPath,
       if (createdAt != null) 'created_at': createdAt,
       if (position != null) 'position': position,
     });
   }
 
-  BookmarksCompanion copyWith({
-    Value<int>? id,
-    Value<int>? boardId,
-    Value<String>? url,
-    Value<String>? domain,
-    Value<String?>? title,
-    Value<String?>? description,
-    Value<String?>? imageUrl,
-    Value<DateTime>? createdAt,
-    Value<int?>? position,
-  }) {
+  BookmarksCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? boardId,
+      Value<String>? url,
+      Value<String>? domain,
+      Value<String?>? title,
+      Value<String?>? description,
+      Value<String?>? imageUrl,
+      Value<String?>? manualThumbnailPath,
+      Value<DateTime>? createdAt,
+      Value<int?>? position}) {
     return BookmarksCompanion(
       id: id ?? this.id,
       boardId: boardId ?? this.boardId,
@@ -924,6 +805,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
       title: title ?? this.title,
       description: description ?? this.description,
       imageUrl: imageUrl ?? this.imageUrl,
+      manualThumbnailPath: manualThumbnailPath ?? this.manualThumbnailPath,
       createdAt: createdAt ?? this.createdAt,
       position: position ?? this.position,
     );
@@ -953,6 +835,10 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
     if (imageUrl.present) {
       map['image_url'] = Variable<String>(imageUrl.value);
     }
+    if (manualThumbnailPath.present) {
+      map['manual_thumbnail_path'] =
+          Variable<String>(manualThumbnailPath.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -972,6 +858,7 @@ class BookmarksCompanion extends UpdateCompanion<Bookmark> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('imageUrl: $imageUrl, ')
+          ..write('manualThumbnailPath: $manualThumbnailPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('position: $position')
           ..write(')'))
@@ -992,56 +879,52 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [boards, bookmarks];
   @override
-  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'boards',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('bookmarks', kind: UpdateKind.delete)],
-    ),
-  ]);
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('boards',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('bookmarks', kind: UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
 }
 
-typedef $$BoardsTableCreateCompanionBuilder =
-    BoardsCompanion Function({
-      Value<int> id,
-      required String name,
-      required DateTime createdAt,
-      Value<ThumbnailSource> thumbnailSource,
-      Value<String?> manualThumbnailPath,
-      Value<int?> position,
-    });
-typedef $$BoardsTableUpdateCompanionBuilder =
-    BoardsCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<DateTime> createdAt,
-      Value<ThumbnailSource> thumbnailSource,
-      Value<String?> manualThumbnailPath,
-      Value<int?> position,
-    });
+typedef $$BoardsTableCreateCompanionBuilder = BoardsCompanion Function({
+  Value<int> id,
+  required String name,
+  required DateTime createdAt,
+  Value<ThumbnailSource> thumbnailSource,
+  Value<String?> manualThumbnailPath,
+  Value<int?> position,
+});
+typedef $$BoardsTableUpdateCompanionBuilder = BoardsCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<DateTime> createdAt,
+  Value<ThumbnailSource> thumbnailSource,
+  Value<String?> manualThumbnailPath,
+  Value<int?> position,
+});
 
 final class $$BoardsTableReferences
     extends BaseReferences<_$AppDatabase, $BoardsTable, Board> {
   $$BoardsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$BookmarksTable, List<Bookmark>>
-  _bookmarksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.bookmarks,
-    aliasName: $_aliasNameGenerator(db.boards.id, db.bookmarks.boardId),
-  );
+      _bookmarksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.bookmarks,
+          aliasName: $_aliasNameGenerator(db.boards.id, db.bookmarks.boardId));
 
   $$BookmarksTableProcessedTableManager get bookmarksRefs {
-    final manager = $$BookmarksTableTableManager(
-      $_db,
-      $_db.bookmarks,
-    ).filter((f) => f.boardId.id.sqlEquals($_itemColumn<int>('id')!));
+    final manager = $$BookmarksTableTableManager($_db, $_db.bookmarks)
+        .filter((f) => f.boardId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_bookmarksRefsTable($_db));
     return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
+        manager.$state.copyWith(prefetchedData: cache));
   }
 }
 
@@ -1055,58 +938,44 @@ class $$BoardsTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.id, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.name, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
   ColumnWithTypeConverterFilters<ThumbnailSource, ThumbnailSource, int>
-  get thumbnailSource => $composableBuilder(
-    column: $table.thumbnailSource,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
+      get thumbnailSource => $composableBuilder(
+          column: $table.thumbnailSource,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
 
   ColumnFilters<String> get manualThumbnailPath => $composableBuilder(
-    column: $table.manualThumbnailPath,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.manualThumbnailPath,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.position, builder: (column) => ColumnFilters(column));
 
   Expression<bool> bookmarksRefs(
-    Expression<bool> Function($$BookmarksTableFilterComposer f) f,
-  ) {
+      Expression<bool> Function($$BookmarksTableFilterComposer f) f) {
     final $$BookmarksTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.bookmarks,
-      getReferencedColumn: (t) => t.boardId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BookmarksTableFilterComposer(
-            $db: $db,
-            $table: $db.bookmarks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.bookmarks,
+        getReferencedColumn: (t) => t.boardId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BookmarksTableFilterComposer(
+              $db: $db,
+              $table: $db.bookmarks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
     return f(composer);
   }
 }
@@ -1121,34 +990,24 @@ class $$BoardsTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.id, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.name, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get thumbnailSource => $composableBuilder(
-    column: $table.thumbnailSource,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.thumbnailSource,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get manualThumbnailPath => $composableBuilder(
-    column: $table.manualThumbnailPath,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.manualThumbnailPath,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.position, builder: (column) => ColumnOrderings(column));
 }
 
 class $$BoardsTableAnnotationComposer
@@ -1171,62 +1030,50 @@ class $$BoardsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<ThumbnailSource, int> get thumbnailSource =>
       $composableBuilder(
-        column: $table.thumbnailSource,
-        builder: (column) => column,
-      );
+          column: $table.thumbnailSource, builder: (column) => column);
 
   GeneratedColumn<String> get manualThumbnailPath => $composableBuilder(
-    column: $table.manualThumbnailPath,
-    builder: (column) => column,
-  );
+      column: $table.manualThumbnailPath, builder: (column) => column);
 
   GeneratedColumn<int> get position =>
       $composableBuilder(column: $table.position, builder: (column) => column);
 
   Expression<T> bookmarksRefs<T extends Object>(
-    Expression<T> Function($$BookmarksTableAnnotationComposer a) f,
-  ) {
+      Expression<T> Function($$BookmarksTableAnnotationComposer a) f) {
     final $$BookmarksTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.bookmarks,
-      getReferencedColumn: (t) => t.boardId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BookmarksTableAnnotationComposer(
-            $db: $db,
-            $table: $db.bookmarks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.bookmarks,
+        getReferencedColumn: (t) => t.boardId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BookmarksTableAnnotationComposer(
+              $db: $db,
+              $table: $db.bookmarks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
     return f(composer);
   }
 }
 
-class $$BoardsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $BoardsTable,
-          Board,
-          $$BoardsTableFilterComposer,
-          $$BoardsTableOrderingComposer,
-          $$BoardsTableAnnotationComposer,
-          $$BoardsTableCreateCompanionBuilder,
-          $$BoardsTableUpdateCompanionBuilder,
-          (Board, $$BoardsTableReferences),
-          Board,
-          PrefetchHooks Function({bool bookmarksRefs})
-        > {
+class $$BoardsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $BoardsTable,
+    Board,
+    $$BoardsTableFilterComposer,
+    $$BoardsTableOrderingComposer,
+    $$BoardsTableAnnotationComposer,
+    $$BoardsTableCreateCompanionBuilder,
+    $$BoardsTableUpdateCompanionBuilder,
+    (Board, $$BoardsTableReferences),
+    Board,
+    PrefetchHooks Function({bool bookmarksRefs})> {
   $$BoardsTableTableManager(_$AppDatabase db, $BoardsTable table)
-    : super(
-        TableManagerState(
+      : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -1235,43 +1082,41 @@ class $$BoardsTableTableManager
               $$BoardsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$BoardsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<ThumbnailSource> thumbnailSource = const Value.absent(),
-                Value<String?> manualThumbnailPath = const Value.absent(),
-                Value<int?> position = const Value.absent(),
-              }) => BoardsCompanion(
-                id: id,
-                name: name,
-                createdAt: createdAt,
-                thumbnailSource: thumbnailSource,
-                manualThumbnailPath: manualThumbnailPath,
-                position: position,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                required DateTime createdAt,
-                Value<ThumbnailSource> thumbnailSource = const Value.absent(),
-                Value<String?> manualThumbnailPath = const Value.absent(),
-                Value<int?> position = const Value.absent(),
-              }) => BoardsCompanion.insert(
-                id: id,
-                name: name,
-                createdAt: createdAt,
-                thumbnailSource: thumbnailSource,
-                manualThumbnailPath: manualThumbnailPath,
-                position: position,
-              ),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<ThumbnailSource> thumbnailSource = const Value.absent(),
+            Value<String?> manualThumbnailPath = const Value.absent(),
+            Value<int?> position = const Value.absent(),
+          }) =>
+              BoardsCompanion(
+            id: id,
+            name: name,
+            createdAt: createdAt,
+            thumbnailSource: thumbnailSource,
+            manualThumbnailPath: manualThumbnailPath,
+            position: position,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String name,
+            required DateTime createdAt,
+            Value<ThumbnailSource> thumbnailSource = const Value.absent(),
+            Value<String?> manualThumbnailPath = const Value.absent(),
+            Value<int?> position = const Value.absent(),
+          }) =>
+              BoardsCompanion.insert(
+            id: id,
+            name: name,
+            createdAt: createdAt,
+            thumbnailSource: thumbnailSource,
+            manualThumbnailPath: manualThumbnailPath,
+            position: position,
+          ),
           withReferenceMapper: (p0) => p0
-              .map(
-                (e) =>
-                    (e.readTable(table), $$BoardsTableReferences(db, table, e)),
-              )
+              .map((e) =>
+                  (e.readTable(table), $$BoardsTableReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: ({bookmarksRefs = false}) {
             return PrefetchHooks(
@@ -1282,82 +1127,76 @@ class $$BoardsTableTableManager
                 return [
                   if (bookmarksRefs)
                     await $_getPrefetchedData<Board, $BoardsTable, Bookmark>(
-                      currentTable: table,
-                      referencedTable: $$BoardsTableReferences
-                          ._bookmarksRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$BoardsTableReferences(db, table, p0).bookmarksRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.boardId == item.id),
-                      typedResults: items,
-                    ),
+                        currentTable: table,
+                        referencedTable:
+                            $$BoardsTableReferences._bookmarksRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$BoardsTableReferences(db, table, p0)
+                                .bookmarksRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.boardId == item.id),
+                        typedResults: items)
                 ];
               },
             );
           },
-        ),
-      );
+        ));
 }
 
-typedef $$BoardsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $BoardsTable,
-      Board,
-      $$BoardsTableFilterComposer,
-      $$BoardsTableOrderingComposer,
-      $$BoardsTableAnnotationComposer,
-      $$BoardsTableCreateCompanionBuilder,
-      $$BoardsTableUpdateCompanionBuilder,
-      (Board, $$BoardsTableReferences),
-      Board,
-      PrefetchHooks Function({bool bookmarksRefs})
-    >;
-typedef $$BookmarksTableCreateCompanionBuilder =
-    BookmarksCompanion Function({
-      Value<int> id,
-      required int boardId,
-      required String url,
-      required String domain,
-      Value<String?> title,
-      Value<String?> description,
-      Value<String?> imageUrl,
-      required DateTime createdAt,
-      Value<int?> position,
-    });
-typedef $$BookmarksTableUpdateCompanionBuilder =
-    BookmarksCompanion Function({
-      Value<int> id,
-      Value<int> boardId,
-      Value<String> url,
-      Value<String> domain,
-      Value<String?> title,
-      Value<String?> description,
-      Value<String?> imageUrl,
-      Value<DateTime> createdAt,
-      Value<int?> position,
-    });
+typedef $$BoardsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $BoardsTable,
+    Board,
+    $$BoardsTableFilterComposer,
+    $$BoardsTableOrderingComposer,
+    $$BoardsTableAnnotationComposer,
+    $$BoardsTableCreateCompanionBuilder,
+    $$BoardsTableUpdateCompanionBuilder,
+    (Board, $$BoardsTableReferences),
+    Board,
+    PrefetchHooks Function({bool bookmarksRefs})>;
+typedef $$BookmarksTableCreateCompanionBuilder = BookmarksCompanion Function({
+  Value<int> id,
+  required int boardId,
+  required String url,
+  required String domain,
+  Value<String?> title,
+  Value<String?> description,
+  Value<String?> imageUrl,
+  Value<String?> manualThumbnailPath,
+  required DateTime createdAt,
+  Value<int?> position,
+});
+typedef $$BookmarksTableUpdateCompanionBuilder = BookmarksCompanion Function({
+  Value<int> id,
+  Value<int> boardId,
+  Value<String> url,
+  Value<String> domain,
+  Value<String?> title,
+  Value<String?> description,
+  Value<String?> imageUrl,
+  Value<String?> manualThumbnailPath,
+  Value<DateTime> createdAt,
+  Value<int?> position,
+});
 
 final class $$BookmarksTableReferences
     extends BaseReferences<_$AppDatabase, $BookmarksTable, Bookmark> {
   $$BookmarksTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $BoardsTable _boardIdTable(_$AppDatabase db) => db.boards.createAlias(
-    $_aliasNameGenerator(db.bookmarks.boardId, db.boards.id),
-  );
+  static $BoardsTable _boardIdTable(_$AppDatabase db) => db.boards
+      .createAlias($_aliasNameGenerator(db.bookmarks.boardId, db.boards.id));
 
   $$BoardsTableProcessedTableManager get boardId {
     final $_column = $_itemColumn<int>('board_id')!;
 
-    final manager = $$BoardsTableTableManager(
-      $_db,
-      $_db.boards,
-    ).filter((f) => f.id.sqlEquals($_column));
+    final manager = $$BoardsTableTableManager($_db, $_db.boards)
+        .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_boardIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
+        manager.$state.copyWith(prefetchedData: [item]));
   }
 }
 
@@ -1371,65 +1210,50 @@ class $$BookmarksTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.id, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get url => $composableBuilder(
-    column: $table.url,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.url, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get domain => $composableBuilder(
-    column: $table.domain,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.domain, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.title, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.description, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get imageUrl => $composableBuilder(
-    column: $table.imageUrl,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.imageUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get manualThumbnailPath => $composableBuilder(
+      column: $table.manualThumbnailPath,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.position, builder: (column) => ColumnFilters(column));
 
   $$BoardsTableFilterComposer get boardId {
     final $$BoardsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.boardId,
-      referencedTable: $db.boards,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BoardsTableFilterComposer(
-            $db: $db,
-            $table: $db.boards,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
+        composer: this,
+        getCurrentColumn: (t) => t.boardId,
+        referencedTable: $db.boards,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BoardsTableFilterComposer(
+              $db: $db,
+              $table: $db.boards,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
     return composer;
   }
 }
@@ -1444,65 +1268,50 @@ class $$BookmarksTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.id, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get url => $composableBuilder(
-    column: $table.url,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.url, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get domain => $composableBuilder(
-    column: $table.domain,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.domain, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.title, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.description, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get imageUrl => $composableBuilder(
-    column: $table.imageUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.imageUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get manualThumbnailPath => $composableBuilder(
+      column: $table.manualThumbnailPath,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.position, builder: (column) => ColumnOrderings(column));
 
   $$BoardsTableOrderingComposer get boardId {
     final $$BoardsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.boardId,
-      referencedTable: $db.boards,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BoardsTableOrderingComposer(
-            $db: $db,
-            $table: $db.boards,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
+        composer: this,
+        getCurrentColumn: (t) => t.boardId,
+        referencedTable: $db.boards,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BoardsTableOrderingComposer(
+              $db: $db,
+              $table: $db.boards,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
     return composer;
   }
 }
@@ -1529,12 +1338,13 @@ class $$BookmarksTableAnnotationComposer
       $composableBuilder(column: $table.title, builder: (column) => column);
 
   GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
+      column: $table.description, builder: (column) => column);
 
   GeneratedColumn<String> get imageUrl =>
       $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get manualThumbnailPath => $composableBuilder(
+      column: $table.manualThumbnailPath, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1544,46 +1354,39 @@ class $$BookmarksTableAnnotationComposer
 
   $$BoardsTableAnnotationComposer get boardId {
     final $$BoardsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.boardId,
-      referencedTable: $db.boards,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BoardsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.boards,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
+        composer: this,
+        getCurrentColumn: (t) => t.boardId,
+        referencedTable: $db.boards,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BoardsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.boards,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
     return composer;
   }
 }
 
-class $$BookmarksTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $BookmarksTable,
-          Bookmark,
-          $$BookmarksTableFilterComposer,
-          $$BookmarksTableOrderingComposer,
-          $$BookmarksTableAnnotationComposer,
-          $$BookmarksTableCreateCompanionBuilder,
-          $$BookmarksTableUpdateCompanionBuilder,
-          (Bookmark, $$BookmarksTableReferences),
-          Bookmark,
-          PrefetchHooks Function({bool boardId})
-        > {
+class $$BookmarksTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $BookmarksTable,
+    Bookmark,
+    $$BookmarksTableFilterComposer,
+    $$BookmarksTableOrderingComposer,
+    $$BookmarksTableAnnotationComposer,
+    $$BookmarksTableCreateCompanionBuilder,
+    $$BookmarksTableUpdateCompanionBuilder,
+    (Bookmark, $$BookmarksTableReferences),
+    Bookmark,
+    PrefetchHooks Function({bool boardId})> {
   $$BookmarksTableTableManager(_$AppDatabase db, $BookmarksTable table)
-    : super(
-        TableManagerState(
+      : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -1592,65 +1395,66 @@ class $$BookmarksTableTableManager
               $$BookmarksTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$BookmarksTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> boardId = const Value.absent(),
-                Value<String> url = const Value.absent(),
-                Value<String> domain = const Value.absent(),
-                Value<String?> title = const Value.absent(),
-                Value<String?> description = const Value.absent(),
-                Value<String?> imageUrl = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<int?> position = const Value.absent(),
-              }) => BookmarksCompanion(
-                id: id,
-                boardId: boardId,
-                url: url,
-                domain: domain,
-                title: title,
-                description: description,
-                imageUrl: imageUrl,
-                createdAt: createdAt,
-                position: position,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int boardId,
-                required String url,
-                required String domain,
-                Value<String?> title = const Value.absent(),
-                Value<String?> description = const Value.absent(),
-                Value<String?> imageUrl = const Value.absent(),
-                required DateTime createdAt,
-                Value<int?> position = const Value.absent(),
-              }) => BookmarksCompanion.insert(
-                id: id,
-                boardId: boardId,
-                url: url,
-                domain: domain,
-                title: title,
-                description: description,
-                imageUrl: imageUrl,
-                createdAt: createdAt,
-                position: position,
-              ),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> boardId = const Value.absent(),
+            Value<String> url = const Value.absent(),
+            Value<String> domain = const Value.absent(),
+            Value<String?> title = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> imageUrl = const Value.absent(),
+            Value<String?> manualThumbnailPath = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> position = const Value.absent(),
+          }) =>
+              BookmarksCompanion(
+            id: id,
+            boardId: boardId,
+            url: url,
+            domain: domain,
+            title: title,
+            description: description,
+            imageUrl: imageUrl,
+            manualThumbnailPath: manualThumbnailPath,
+            createdAt: createdAt,
+            position: position,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int boardId,
+            required String url,
+            required String domain,
+            Value<String?> title = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> imageUrl = const Value.absent(),
+            Value<String?> manualThumbnailPath = const Value.absent(),
+            required DateTime createdAt,
+            Value<int?> position = const Value.absent(),
+          }) =>
+              BookmarksCompanion.insert(
+            id: id,
+            boardId: boardId,
+            url: url,
+            domain: domain,
+            title: title,
+            description: description,
+            imageUrl: imageUrl,
+            manualThumbnailPath: manualThumbnailPath,
+            createdAt: createdAt,
+            position: position,
+          ),
           withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$BookmarksTableReferences(db, table, e),
-                ),
-              )
+              .map((e) => (
+                    e.readTable(table),
+                    $$BookmarksTableReferences(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: ({boardId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
+              addJoins: <
+                  T extends TableManagerState<
                       dynamic,
                       dynamic,
                       dynamic,
@@ -1661,48 +1465,40 @@ class $$BookmarksTableTableManager
                       dynamic,
                       dynamic,
                       dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (boardId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.boardId,
-                                referencedTable: $$BookmarksTableReferences
-                                    ._boardIdTable(db),
-                                referencedColumn: $$BookmarksTableReferences
-                                    ._boardIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+                      dynamic>>(state) {
+                if (boardId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.boardId,
+                    referencedTable:
+                        $$BookmarksTableReferences._boardIdTable(db),
+                    referencedColumn:
+                        $$BookmarksTableReferences._boardIdTable(db).id,
+                  ) as T;
+                }
 
-                    return state;
-                  },
+                return state;
+              },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
             );
           },
-        ),
-      );
+        ));
 }
 
-typedef $$BookmarksTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $BookmarksTable,
-      Bookmark,
-      $$BookmarksTableFilterComposer,
-      $$BookmarksTableOrderingComposer,
-      $$BookmarksTableAnnotationComposer,
-      $$BookmarksTableCreateCompanionBuilder,
-      $$BookmarksTableUpdateCompanionBuilder,
-      (Bookmark, $$BookmarksTableReferences),
-      Bookmark,
-      PrefetchHooks Function({bool boardId})
-    >;
+typedef $$BookmarksTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $BookmarksTable,
+    Bookmark,
+    $$BookmarksTableFilterComposer,
+    $$BookmarksTableOrderingComposer,
+    $$BookmarksTableAnnotationComposer,
+    $$BookmarksTableCreateCompanionBuilder,
+    $$BookmarksTableUpdateCompanionBuilder,
+    (Bookmark, $$BookmarksTableReferences),
+    Bookmark,
+    PrefetchHooks Function({bool boardId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;

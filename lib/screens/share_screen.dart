@@ -352,7 +352,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                                   return Column(
                                     children: [
                                       DropdownButtonFormField<Board>(
-                                        initialValue: _selectedBoard,
+                                        value: _selectedBoard,
                                         hint: const Text('Select a Board'),
                                         decoration: const InputDecoration(
                                           border: OutlineInputBorder(),

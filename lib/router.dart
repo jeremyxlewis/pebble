@@ -11,12 +11,34 @@ import 'package:pebble_board/screens/settings_screen.dart';
 import 'package:pebble_board/screens/share_screen.dart';
 import 'package:pebble_board/screens/board_thumbnail_settings_screen.dart';
 
+import 'package:pebble_board/screens/onboarding_screen.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    redirect: (BuildContext context, GoRouterState state) async {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+
+      final isGoingToOnboarding = state.matchedLocation == AppRoutes.onboarding;
+
+      if (!hasSeenOnboarding && !isGoingToOnboarding) {
+        return AppRoutes.onboarding;
+      } else if (hasSeenOnboarding && isGoingToOnboarding) {
+        return AppRoutes.home;
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
       ),
        GoRoute(
          path: AppRoutes.board,

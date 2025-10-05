@@ -1,6 +1,7 @@
 
 class AppRoutes {
   static const String home = '/';
+  static const String onboarding = '/onboarding';
   static const String board = '/board/:boardId';
   static const String share = '/share';
   static const String settings = '/settings';
